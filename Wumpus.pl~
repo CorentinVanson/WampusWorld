@@ -20,8 +20,13 @@
        maybeTrou/1,
        sureAscenseur/1,
        sureMonstre/1,
-       sureMonstreMort/1,
        sureTrou/1,
+       sureNotAscenseur/1,
+       sureNotMonstre/1,
+       sureNotTrou/1,
+       knowSouffle/1,
+       knowOdeur/1,
+       knowBruit/1,
        /*****DONNEES DE JEU******/
        direction/1,		  % 1=Nord; 2=Est; 3=Sud; 4=Ouest;
        fleche/0
@@ -29,7 +34,7 @@
 
 start :-
 	initialise,
-        new(P, auto_sized_picture('Table with merged cells')),
+        new(P, auto_sized_picture('Wumpus World')),
 	afficherJeu(P),
 	afficherJeu(P).
 
@@ -59,6 +64,13 @@ initialisation :-
 	retractall(sureMonstre([_,_])),
 	retractall(sureMonstreMort([_,_])),
 	retractall(sureTrou([_,_])),
+	retractall(sureNotAscenseur([_,_])),
+	retractall(sureNotMonstre([_,_])),
+	retractall(sureNotMonstreMort([_,_])),
+	retractall(sureNotTrou([_,_])),
+	retractall(knowBruit([_,_])),
+	retractall(knowSouffle([_,_])),
+	retractall(knowOdeur([_,_])),
 	retractall(direction(_)),
 	assert(fleche),
 	assert(direction(2)),
@@ -204,66 +216,125 @@ afficherElements(T,X,Y) :-
 	    send(T,append(new(Q, tabular))),
 	    (
 		(
-		     not(souffle([Xb,Yb])),
-		     send(Q,append("c",colour := white, background := white))
-	        );
-		send(Q,append("s",colour := white, background := red))
-	    ),
-	    send(Q,append("c",colour := white, background := white)),
-	    (
-		(
-		     not(bruit([Xb,Yb])),
-		     send(Q,append("b",colour := white, background := white))
-	        );
-		send(Q,append("b",colour := white, background := purple))
-	    ),
-	    send(Q,next_row),
-	    send(Q,append("c",colour := white, background := white)),
-	    (
-		(
 		     not(not(monstre([Xb,Yb]))),
-		     send(Q,append("m",colour := black, background := green))
+		     send(Q,append("m", bold, center, colour := black, background := green, rowspan := 2, colspan := 2))
 	        );
 		(
 		     not(not(tresor([Xb,Yb]))),
-		     send(Q,append("t",colour := black, background := yellow))
+		     send(Q,append("t", bold,  center, colour := black, background := yellow, rowspan := 2, colspan := 2))
 	        );
 		(
 		     not(not(ascenseur([Xb,Yb]))),
-		     send(Q,append("a",colour := black, background := orange))
+		     send(Q,append("a", bold, center, colour := black, background := orange, rowspan := 2, colspan := 2))
 	        );
 		(
 		     not(not(joueur([Xb,Yb]))),
-		     send(Q,append("j",colour := white, background := brown))
+		     send(Q,append("j", bold, center, colour := white, background := cyan, rowspan := 2, colspan := 2))
 	        );
 		(
 		     not(not(trou([Xb,Yb]))),
-		     send(Q,append("t",colour := white, background := black))
+		     send(Q,append("t", bold, center, colour := white, background := brown, rowspan := 2, colspan := 2))
 	        );
 		(
 		     not(not(mur([Xb,Yb]))),
-		     send(Q,append("m",colour := black, background := gray))
+		     send(Q,append("m", bold, center, colour := black, background := black, rowspan := 2, colspan := 2))
 	        );
-		send(Q,append("c",colour := white, background := white))
+		send(Q,append("c", bold, center, colour := white, background := white, rowspan := 2, colspan := 2))
 	    ),
-
-	    send(Q,append("c",colour := white, background := white)),
+	    (
+		(
+		     not(souffle([Xb,Yb])),
+		     send(Q,append("s", bold, center, colour := white, background := gray))
+	        );
+		send(Q,append("s", bold, center, colour := white, background := red))
+	    ),
+	    (
+		(
+		     not(bruit([Xb,Yb])),
+		     send(Q,append("b", bold, center, colour := white, background := gray))
+	        );
+		send(Q,append("b", bold, center, colour := white, background := purple))
+	    ),
 	    send(Q,next_row),
 	    (
 		(
 		     not(odeur([Xb,Yb])),
-		     send(Q,append("c",colour := white, background := white))
+		     send(Q,append("o", bold, center,colour := white, background := gray))
 	        );
-		send(Q,append("o",colour := white, background := blue))
+		send(Q,append("o", bold, center,colour := white, background := blue))
 	    ),
-	    send(Q,append("c",colour := white, background := white)),
+	    send(Q,append("o", bold, center,colour := white, background := white)),
+	    send(Q,next_row),
 	    (
 		(
-		     not(bruit([Xb,Yb])),
-		     send(Q,append("c",colour := white, background := white))
+		     not(not(sureMonstre([Xb,Yb]))),
+		     send(Q,append("m", bold, center, colour := white, background := green))
 	        );
-		send(Q,append("c",colour := white, background := white))
+		(
+		     not(not(sureNotMonstre([Xb,Yb]))),
+		     send(Q,append("!m", bold, center, colour := white, background := red))
+	        );
+		(
+		     not(not(maybeMonstre([Xb,Yb]))),
+		     send(Q,append("?m", bold, center, colour := white, background := orange))
+	        );
+		send(Q,append("m", bold, center, colour := white, background := gray))
 	    ),
+	    (
+		(
+		     not(not(sureTrou([Xb,Yb]))),
+		     send(Q,append("t", bold, center, colour := white, background := green))
+	        );
+		(
+		     not(not(sureNotTrou([Xb,Yb]))),
+		     send(Q,append("!t", bold, center, colour := white, background := red))
+	        );
+		(
+		     not(not(maybeTrou([Xb,Yb]))),
+		     send(Q,append("?t", bold, center, colour := white, background := orange))
+	        );
+		send(Q,append("t", bold,  center,colour := white, background := gray))
+	    ),
+	    (
+		(
+		     not(knowSouffle([Xb,Yb])),
+		     send(Q,append("s", bold, center,colour := white, background := gray))
+	        );
+		send(Q,append("s", bold, center,colour := white, background := red))
+	    ),
+	    (
+		(
+		     not(knowBruit([Xb,Yb])),
+		     send(Q,append("s", bold, center,colour := white, background := gray))
+	        );
+		send(Q,append("s", bold, center,colour := white, background := purple))
+	    ),
+	    send(Q,next_row),
+	    (
+		(
+		     not(not(sureAscenseur([Xb,Yb]))),
+		     send(Q,append("a", bold, center, colour := white, background := green))
+	        );
+		(
+		     not(not(sureNotAscenseur([Xb,Yb]))),
+		     send(Q,append("!a", bold, center, colour := white, background := red))
+	        );
+		(
+		     not(not(maybeAscenseur([Xb,Yb]))),
+		     send(Q,append("?a", bold, center, colour := white, background := orange))
+	        );
+		send(Q,append("a", bold,  center,colour := white, background := gray))
+	    ),
+	    send(Q,append("t", bold,  center,colour := white, background := white)),
+	    (
+		(
+		     not(knowOdeur([Xb,Yb])),
+		     send(Q,append("o", bold, center,colour := white, background := gray))
+	        );
+		send(Q,append("o", bold, center,colour := white, background := blue))
+	    ),
+	    send(Q,append("t", bold,  center,colour := white, background := white)),
+
 	    Xc is Xb + 1,
 	    afficherElements(T,Xc,Yb)
 	);
