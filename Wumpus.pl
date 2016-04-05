@@ -305,9 +305,9 @@ afficherElements(T,X,Y) :-
 	    (
 		(
 		     not(knowBruit([Xb,Yb])),
-		     send(Q,append("s", bold, center,colour := white, background := gray))
+		     send(Q,append("b", bold, center,colour := white, background := gray))
 	        );
-		send(Q,append("s", bold, center,colour := white, background := purple))
+		send(Q,append("b", bold, center,colour := white, background := purple))
 	    ),
 	    send(Q,next_row),
 	    (

@@ -229,7 +229,7 @@ afficherElements(T,X,Y) :-
 	        );
 		(
 		     not(not(joueur([Xb,Yb]))),
-		     send(Q,append("j", bold, center, colour := white, background := cyan, rowspan := 2, colspan := 2))
+		     send(Q,append("j", bold, center, colour := black, background := cyan, rowspan := 2, colspan := 2))
 	        );
 		(
 		     not(not(trou([Xb,Yb]))),
@@ -237,7 +237,7 @@ afficherElements(T,X,Y) :-
 	        );
 		(
 		     not(not(mur([Xb,Yb]))),
-		     send(Q,append("m", bold, center, colour := black, background := black, rowspan := 2, colspan := 2))
+		     send(Q,append("m", bold, center, colour := white, background := black, rowspan := 2, colspan := 2))
 	        );
 		send(Q,append("c", bold, center, colour := white, background := white, rowspan := 2, colspan := 2))
 	    ),
