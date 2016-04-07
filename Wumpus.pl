@@ -14,14 +14,17 @@
        souffle/1,
        odeur/1,
        bruit/1,
+       bling/1,
        /*********PERCEPTS********/
        maybeAscenseur/1,
        maybeMonstre/1,
        maybeTrou/1,
        sureAscenseur/1,
+       ascenseurTrouve/0,
        sureMonstre/1,
        sureTrou/1,
        sureTresor/1,
+       tresorTrouve/0,
        sureNotAscenseur/1,
        sureNotMonstre/1,
        sureNotTrou/1,
@@ -30,12 +33,20 @@
        safe/1,
        /*****DONNEES DE JEU******/
        direction/1,		  % 1=Nord; 2=Est; 3=Sud; 4=Ouest;
-       fleche/0
+       fleche/0,
+       gagner/0,
+       perdu/0
    ]).
 
 start :-
 	initialise,
-        new(P, auto_sized_picture('Wumpus World')),
+        new(P, picture('Wumpus World', size(725,550))),
+	afficherJeu(P),
+	sleep(1),
+	boucleDeJeu(P).
+
+start(P) :-
+	initialise,
 	afficherJeu(P),
 	sleep(1),
 	boucleDeJeu(P).
@@ -60,6 +71,7 @@ initialisation :-
 	retractall(monstre([_,_])),
 	retractall(trou([_,_])),
 	retractall(souffle([_,_])),
+	retractall(bling([_,_])),
 	retractall(tresor([_,_])),
 	retractall(ascenseur([_,_])),
 	retractall(bruit([_,_])),
@@ -78,6 +90,10 @@ initialisation :-
 	retractall(visite([_,_])),
 	retractall(safe([_,_])),
 	retractall(direction(_)),
+	retractall(tresorTrouve),
+	retractall(ascenseurTrouve),
+	retractall(gagner),
+	retractall(perdu),
 	assert(fleche),
 	assert(direction(2)),
 	!.
@@ -132,7 +148,16 @@ initialiserTresor :-
 	random(1,5,Y),
 	(
 	    estVide([X,Y]),
-	    assert(tresor([X,Y]))
+	    assert(tresor([X,Y])),
+	    Xp is X + 1,
+	    Xm is X - 1,
+	    Yp is Y + 1,
+	    Ym is Y - 1,
+	    assert(bling([X,Ym])),
+	    assert(bling([X,Yp])),
+	    assert(bling([Xm,Y])),
+	    assert(bling([Xp,Y]))
+
 	);
 	initialiserTresor,
 	!.
@@ -208,7 +233,8 @@ miseAJourPredicat :-
 	(
 	    (
 	        not(not(tresor([X,Y]))),
-	        assert(sureTresor([X,Y]))
+	        assert(sureTresor([X,Y])),
+	        assert(tresorTrouve)
 	    );
 	(
 	        not(tresor([X,Y])),
@@ -218,7 +244,8 @@ miseAJourPredicat :-
 	(
 	    (
 	        not(not(ascenseur([X,Y]))),
-	        assert(sureAscenseur([X,Y]))
+	        assert(sureAscenseur([X,Y])),
+	        assert(ascenseurTrouve)
 	    );
 	(
 	        not(ascenseur([X,Y])),
@@ -235,17 +262,141 @@ miseAJourPredicat :-
 	        assert(sureNotTrou([X,Y]))
 	    )
 	),
-	(
+	(   (
 	    not(souffle([X,Y])),
 	    not(odeur([X,Y])),
-	    (Xa is X,Ya is Y + 1, not(mur([Xa,Ya])),not(visite([Xa,Ya])), assert(safe([Xa,Ya]))),
-	    (Xb is X,Yb is Y - 1, not(mur([Xb,Yb])),not(visite([Xb,Yb])), assert(safe([Xb,Yb]))),
-	    (Xc is X + 1,Yc is Y, not(mur([Xc,Yc])),not(visite([Xc,Yc])), assert(safe([Xc,Yc]))),
-	    (Xd is X - 1,Yd is Y, not(mur([Xd,Yd])),not(visite([Xd,Yd])), assert(safe([Xd,Yd])))
-	);!,
+	    ((Xa is X,Ya is Y + 1, not(mur([Xa,Ya])),not(visite([Xa,Ya])), assert(safe([Xa,Ya])));!),
+	    ((Xb is X,Yb is Y - 1, not(mur([Xb,Yb])),not(visite([Xb,Yb])), assert(safe([Xb,Yb])));!),
+	    ((Xc is X + 1,Yc is Y, not(mur([Xc,Yc])),not(visite([Xc,Yc])), assert(safe([Xc,Yc])));!),
+	    ((Xd is X - 1,Yd is Y, not(mur([Xd,Yd])),not(visite([Xd,Yd])), assert(safe([Xd,Yd])));!)
+	);!),
+	(   (
+	    not(not(odeur([X,Y]))),
+	    Xup is X + 1,
+	    Xdown is X - 1,
+	    Yup is Y + 1,
+	    Ydown is Y - 1,
+	    not(sureMonstre([Xup,Y])),
+	    not(sureMonstre([Xdown,Y])),
+	    not(sureMonstre([X,Yup])),
+	    not(sureMonstre([X,Ydown])),
+	    (
+		not(mur([Xup,Y])),
+		(
+		    not(not(sureNotMonstre([Xup,Y]))) ;
+		    assert(maybeMonstre([Xup,Y]))
+		)
+	    ),
+	    (
+		not(mur([Xdown,Y])),
+		(
+		    not(not(sureNotMonstre([Xdown,Y]))) ;
+		    assert(maybeMonstre([Xdown,Y]))
+		)
+	    ),
+	    (
+		not(mur([X,Yup])),
+		(
+		    not(not(sureNotMonstre([X,Yup]))) ;
+		    assert(maybeMonstre([X,Yup]))
+		)
+	    ),
+	    (
+		not(mur([X,Ydown])),
+		(
+		    not(not(sureNotMonstre([X,Ydown]))) ;
+		    assert(maybeMonstre([X,Ydown]))
+		)
+	    )
+	);!),
+	(   (
+	    not(not(souffle([X,Y]))),
+	    Xup is X + 1,
+	    Xdown is X - 1,
+	    Yup is Y + 1,
+	    Ydown is Y - 1,
+	    not(sureTrou([Xup,Y])),
+	    not(sureTrou([Xdown,Y])),
+	    not(sureTrou([X,Yup])),
+	    not(sureTrou([X,Ydown])),
+	    (
+		not(mur([Xup,Y])),
+		(
+		    not(not(sureNotTrou([Xup,Y]))) ;
+		    assert(maybeTrou([Xup,Y]))
+		)
+	    ),
+	    (
+		not(mur([Xdown,Y])),
+		(
+		    not(not(sureNotTrou([Xdown,Y]))) ;
+		    assert(maybeTrou([Xdown,Y]))
+		)
+	    ),
+	    (
+		not(mur([X,Yup])),
+		(
+		    not(not(sureNotTrou([X,Yup]))) ;
+		    assert(maybeTrou([X,Yup]))
+		)
+	    ),
+	    (
+		not(mur([X,Ydown])),
+		(
+		    not(not(sureNotTrou([X,Ydown]))) ;
+		    assert(maybeTrou([X,Ydown]))
+		)
+	    )
+	);!),
+	(   (
+	    not(not(bruit([X,Y]))),
+	    Xup is X + 1,
+	    Xdown is X - 1,
+	    Yup is Y + 1,
+	    Ydown is Y - 1,
+	    not(sureAscenseur([Xup,Y])),
+	    not(sureAscenseur([Xdown,Y])),
+	    not(sureAscenseur([X,Yup])),
+	    not(sureAscenseur([X,Ydown])),
+	    (
+		not(mur([Xup,Y])),
+		(
+		    not(not(sureNotAscenseur([Xup,Y]))) ;
+		    assert(maybeAscenseur([Xup,Y]))
+		)
+	    ),
+	    (
+		not(mur([Xdown,Y])),
+		(
+		    not(not(sureNotAscenseur([Xdown,Y]))) ;
+		    assert(maybeAscenseur([Xdown,Y]))
+		)
+	    ),
+	    (
+		not(mur([X,Yup])),
+		(
+		    not(not(sureNotAscenseur([X,Yup]))) ;
+		    assert(maybeAscenseur([X,Yup]))
+		)
+	    ),
+	    (
+		not(mur([X,Ydown])),
+		(
+		    not(not(sureNotAscenseur([X,Ydown]))) ;
+		    assert(maybeAscenseur([X,Ydown]))
+		)
+	    )
+	);!),
+	miseAJourPredicatsMonde,
 	!.
 
+miseAJourPredicatsMonde :-
+	miseAJourPredicatsCase(0,0),
+	!.
 
+miseAJourPredicatsCase(Xa,Ya) :-
+
+	!.
 
 /*******************************************/
 /**************BOUCLE DE JEU****************/
@@ -253,18 +404,104 @@ miseAJourPredicat :-
 
 boucleDeJeu(P) :-
 	(
-            random(1,5,R),
-            tournerJoueur(R),
-            avancerJoueur,
+            etapeSuivante,
+            verifierEtatJeu,
             afficherJeu(P),
             sleep(1),
-            boucleDeJeu(P)
+            (
+		(
+		    (not(not(gagner));not(not(perdu))),
+		    start(P)
+		);
+		boucleDeJeu(P)
+	    )
 	),
+	!.
+
+verifierEtatJeu :-
+	    getJoueur(X,Y,1,1),
+	    ((not(not(ascenseur([X,Y]))),not(not(tresorTrouve)),assert(gagner));!),
+	    (((not(not(monstre([X,Y])));not(not(trou([X,Y])))),assert(perdu));!),
 	!.
 
 /*******************************************/
 /*****************JOUEUR********************/
 /*******************************************/
+
+/*******************IA**********************/
+
+etapeSuivante :-
+	getProchaineEtape(X,Y),
+	bougerJoueur([X,Y]),
+	!.
+
+getProchaineEtape(X,Y) :-
+	(
+            (
+                not(not(tresorTrouve)),
+                not(not(ascenseurTrouve)),
+                getAscenseur(X,Y,1,1)
+	    );
+	    getProchaineEtapeSafe(X,Y,0,0)
+        ),
+	!.
+
+getProchaineEtapeSafe(X,Y,Xa,Ya) :-
+	(
+	     (
+		 (Xa < 6, Xb is Xa, Yb is Ya);
+		 (Xa > 5, Xb is 0, Yb is Ya + 1)
+	     ),
+
+             (
+		   (
+		         Ya > 5,
+		         getProchaineEtapeNonSafe(X,Y,0,0)
+		   );
+	           (
+	                 (
+                              not(not(safe([Xb,Yb]))),
+		              not(visite([Xb,Yb])),
+			      X is Xb,
+                              Y is Yb
+	                 );
+	                 (
+		              Xc is Xb + 1,
+	                      getProchaineEtapeSafe(X,Y,Xc,Yb)
+		         )
+		   )
+	     )
+	),
+	!.
+
+getProchaineEtapeNonSafe(X,Y,Xa,Ya) :-
+	(
+	     (
+		 (Xa < 6, Xb is Xa, Yb is Ya);
+		 (Xa > 5, Xb is 0, Yb is Ya + 1)
+	     ),
+
+             (
+		   (
+		         Ya > 5
+	           );
+	           (
+	                 (
+                              (not(not(maybeMonstre([Xb,Yb])));not(not(maybeTrou([Xb,Yb])))),
+		              not(visite([Xb,Yb])),
+			      X is Xb,
+                              Y is Yb
+	                 );
+	                 (
+		              Xc is Xb + 1,
+	                      getProchaineEtapeNonSafe(X,Y,Xc,Yb)
+		         )
+		   )
+	     )
+	),
+	!.
+
+/*****************DIVERS********************/
 
 tournerJoueur(X) :-
 	retractall(direction(_)),
@@ -272,6 +509,7 @@ tournerJoueur(X) :-
 	!.
 
 bougerJoueur([X,Y]) :-
+	format("Joueur: ~p ~p ~n", [X,Y]),
 	retractall(joueur([_,_])),
 	assert(joueur([X,Y])),
 	miseAJourPredicat,
@@ -333,6 +571,35 @@ getJoueur(X,Y,Xa,Ya) :-
 	),
 	!.
 
+getAscenseur(X,Y,Xa,Ya) :-
+	(
+           (
+	       not(ascenseur([Xa,Ya])),
+	       Xb is Xa + 1,
+               (
+		   (
+			Xb > 4,
+			Xc is 1,
+			Yc is Ya + 1
+		   );
+		   (
+			Xb < 5,
+			Xc is Xb + 0,
+			Yc is Ya + 0
+		   )
+	       ),
+               getAscenseur(X,Y,Xc,Yc)
+	   );
+	   (
+	       not(not(ascenseur([Xa,Ya]))),
+	       X is Xa + 0,
+	       Y is Ya + 0
+	   );
+	   Ya > 5
+	),
+	!.
+
+
 /*******************************************/
 /*****************DIVERS********************/
 /*******************************************/
@@ -356,6 +623,20 @@ afficherJeu(P) :-
         send(T, cell_spacing, -1),
         send(T, rules, all),
 	afficherElements(T,0,5),
+	send(T,next_row),
+	(
+	    (
+	         not(not(gagner)),
+		 send(T,append("Gagné", bold, center, valign := center, colour := black, background := green, rowspan := 1, colspan := 6))
+	    );
+	    (
+	         not(not(perdu)),
+		 send(T,append("Perdu", bold, center, valign := center, colour := white, background := red, rowspan := 1, colspan := 6))
+	    );
+	    (
+		 send(T,append("Recherche en cours...", bold, center, valign := center, colour := black, background := white, rowspan := 1, colspan := 6))
+	    )
+	),
 	send(P, open),
 	send(P,flush).
 
