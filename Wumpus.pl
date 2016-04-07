@@ -19,6 +19,7 @@
        maybeAscenseur/1,
        maybeMonstre/1,
        maybeTrou/1,
+       maybeTresor/1,
        sureAscenseur/1,
        ascenseurTrouve/0,
        sureMonstre/1,
@@ -39,11 +40,8 @@
    ]).
 
 start :-
-	initialise,
-        new(P, picture('Wumpus World', size(725,550))),
-	afficherJeu(P),
-	sleep(1),
-	boucleDeJeu(P).
+	new(P, picture('Wumpus World', size(725,550))),
+	start(P).
 
 start(P) :-
 	initialise,
@@ -79,6 +77,7 @@ initialisation :-
 	retractall(maybeAscenseur([_,_])),
 	retractall(maybeMonstre([_,_])),
 	retractall(maybeTrou([_,_])),
+	retractall(maybeTresor([_,_])),
 	retractall(sureAscenseur([_,_])),
 	retractall(sureMonstre([_,_])),
 	retractall(sureTrou([_,_])),
@@ -270,7 +269,7 @@ miseAJourPredicat :-
 	    ((Xc is X + 1,Yc is Y, not(mur([Xc,Yc])),not(visite([Xc,Yc])), assert(safe([Xc,Yc])));!),
 	    ((Xd is X - 1,Yd is Y, not(mur([Xd,Yd])),not(visite([Xd,Yd])), assert(safe([Xd,Yd])));!)
 	);!),
-	(   (
+	((
 	    not(not(odeur([X,Y]))),
 	    Xup is X + 1,
 	    Xdown is X - 1,
@@ -280,34 +279,65 @@ miseAJourPredicat :-
 	    not(sureMonstre([Xdown,Y])),
 	    not(sureMonstre([X,Yup])),
 	    not(sureMonstre([X,Ydown])),
-	    (
+	    (	(
 		not(mur([Xup,Y])),
 		(
 		    not(not(sureNotMonstre([Xup,Y]))) ;
 		    assert(maybeMonstre([Xup,Y]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([Xdown,Y])),
 		(
 		    not(not(sureNotMonstre([Xdown,Y]))) ;
 		    assert(maybeMonstre([Xdown,Y]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([X,Yup])),
 		(
 		    not(not(sureNotMonstre([X,Yup]))) ;
 		    assert(maybeMonstre([X,Yup]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([X,Ydown])),
 		(
 		    not(not(sureNotMonstre([X,Ydown]))) ;
 		    assert(maybeMonstre([X,Ydown]))
 		)
-	    )
+	    );!)
+	);
+	(
+	    not(odeur([X,Y])),
+	    Xup is X + 1,
+	    Xdown is X - 1,
+	    Yup is Y + 1,
+	    Ydown is Y - 1,
+	    (	(
+		not(mur([Xup,Y])),
+		(
+		    assert(sureNotMonstre([Xup,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([Xdown,Y])),
+		(
+		    assert(sureNotMonstre([Xdown,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Yup])),
+		(
+		    assert(sureNotMonstre([X,Yup]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Ydown])),
+		(
+		    assert(sureNotMonstre([X,Ydown]))
+		)
+	    );!)
 	);!),
 	(   (
 	    not(not(souffle([X,Y]))),
@@ -315,39 +345,67 @@ miseAJourPredicat :-
 	    Xdown is X - 1,
 	    Yup is Y + 1,
 	    Ydown is Y - 1,
-	    not(sureTrou([Xup,Y])),
-	    not(sureTrou([Xdown,Y])),
-	    not(sureTrou([X,Yup])),
-	    not(sureTrou([X,Ydown])),
-	    (
+	    (	(
 		not(mur([Xup,Y])),
 		(
 		    not(not(sureNotTrou([Xup,Y]))) ;
 		    assert(maybeTrou([Xup,Y]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([Xdown,Y])),
 		(
 		    not(not(sureNotTrou([Xdown,Y]))) ;
 		    assert(maybeTrou([Xdown,Y]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([X,Yup])),
 		(
 		    not(not(sureNotTrou([X,Yup]))) ;
 		    assert(maybeTrou([X,Yup]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([X,Ydown])),
 		(
 		    not(not(sureNotTrou([X,Ydown]))) ;
 		    assert(maybeTrou([X,Ydown]))
 		)
-	    )
+	    );!)
+	);
+	(
+	    not(souffle([X,Y])),
+	    Xup is X + 1,
+	    Xdown is X - 1,
+	    Yup is Y + 1,
+	    Ydown is Y - 1,
+	    (	(
+		not(mur([Xup,Y])),
+		(
+		    assert(sureNotTrou([Xup,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([Xdown,Y])),
+		(
+		    assert(sureNotTrou([Xdown,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Yup])),
+		(
+		    assert(sureNotTrou([X,Yup]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Ydown])),
+		(
+		    assert(sureNotTrou([X,Ydown]))
+		)
+	    );!)
 	);!),
+
 	(   (
 	    not(not(bruit([X,Y]))),
 	    Xup is X + 1,
@@ -358,35 +416,139 @@ miseAJourPredicat :-
 	    not(sureAscenseur([Xdown,Y])),
 	    not(sureAscenseur([X,Yup])),
 	    not(sureAscenseur([X,Ydown])),
-	    (
+	    (	(
 		not(mur([Xup,Y])),
 		(
 		    not(not(sureNotAscenseur([Xup,Y]))) ;
 		    assert(maybeAscenseur([Xup,Y]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([Xdown,Y])),
 		(
 		    not(not(sureNotAscenseur([Xdown,Y]))) ;
 		    assert(maybeAscenseur([Xdown,Y]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([X,Yup])),
 		(
 		    not(not(sureNotAscenseur([X,Yup]))) ;
 		    assert(maybeAscenseur([X,Yup]))
 		)
-	    ),
-	    (
+	    );!),
+	    (	(
 		not(mur([X,Ydown])),
 		(
 		    not(not(sureNotAscenseur([X,Ydown]))) ;
 		    assert(maybeAscenseur([X,Ydown]))
 		)
-	    )
+	    );!)
+	);
+	(
+	    not(bruit([X,Y])),
+	    Xup is X + 1,
+	    Xdown is X - 1,
+	    Yup is Y + 1,
+	    Ydown is Y - 1,
+	    (	(
+		not(mur([Xup,Y])),
+		(
+		    assert(sureNotAscenseur([Xup,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([Xdown,Y])),
+		(
+		    assert(sureNotAscenseur([Xdown,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Yup])),
+		(
+		    assert(sureNotAscenseur([X,Yup]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Ydown])),
+		(
+		    assert(sureNotAscenseur([X,Ydown]))
+		)
+	    );!)
 	);!),
+
+
+	(   (
+	    not(not(bling([X,Y]))),
+	    Xup is X + 1,
+	    Xdown is X - 1,
+	    Yup is Y + 1,
+	    Ydown is Y - 1,
+	    not(sureTresor([Xup,Y])),
+	    not(sureTresor([Xdown,Y])),
+	    not(sureTresor([X,Yup])),
+	    not(sureTresor([X,Ydown])),
+	    (	(
+		not(mur([Xup,Y])),
+		(
+		    not(not(sureNotTresor([Xup,Y]))) ;
+		    assert(maybeTresor([Xup,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([Xdown,Y])),
+		(
+		    not(not(sureNotTresor([Xdown,Y]))) ;
+		    assert(maybeTresor([Xdown,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Yup])),
+		(
+		    not(not(sureNotTresor([X,Yup]))) ;
+		    assert(maybeTresor([X,Yup]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Ydown])),
+		(
+		    not(not(sureNotTresor([X,Ydown]))) ;
+		    assert(maybeTresor([X,Ydown]))
+		)
+	    );!)
+	);
+	(
+	    not(bling([X,Y])),
+	    Xup is X + 1,
+	    Xdown is X - 1,
+	    Yup is Y + 1,
+	    Ydown is Y - 1,
+	    (	(
+		not(mur([Xup,Y])),
+		(
+		    assert(sureNotTresor([Xup,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([Xdown,Y])),
+		(
+		    assert(sureNotTresor([Xdown,Y]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Yup])),
+		(
+		    assert(sureNotTresor([X,Yup]))
+		)
+	    );!),
+	    (	(
+		not(mur([X,Ydown])),
+		(
+		    assert(sureNotTresor([X,Ydown]))
+		)
+	    );!)
+	);!),
+
 	miseAJourPredicatsMonde,
 	!.
 
@@ -395,7 +557,25 @@ miseAJourPredicatsMonde :-
 	!.
 
 miseAJourPredicatsCase(Xa,Ya) :-
+	(
+	     (
+		 (Xa < 6, Xb is Xa, Yb is Ya);
+		 (Xa > 5, Xb is 0, Yb is Ya + 1)
+	     ),
 
+             (
+		   (
+		         Ya > 5
+	           );
+	           (
+	                 (
+		              ((sureNotMonstre([Xb,Yb]),sureNotTrou([Xb,Yb]),not(visite([Xb,Yb])), not(mur([Xb,Yb])),assert(safe([Xb,Yb])));!),
+		              Xc is Xb + 1,
+	                      miseAJourPredicatsCase(Xc,Yb)
+		         )
+		   )
+	     )
+	),
 	!.
 
 /*******************************************/
@@ -707,7 +887,13 @@ afficherElements(T,X,Y) :-
 	        );
 		send(Q,append("o", bold, center,colour := white, background := blue))
 	    ),
-	    send(Q,append("o", bold, center,colour := white, background := white)),
+	    (
+		(
+		     not(bling([Xb,Yb])),
+		     send(Q,append("b", bold, center,colour := white, background := gray))
+	        );
+		send(Q,append("b", bold, center,colour := black, background := yellow))
+	    ),
 	    send(Q,next_row),
 	    (
 		(
