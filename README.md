@@ -48,7 +48,7 @@ En bas à gauche, nous avons les déductions du joueur:
  - ~ (En gris): Il n'a aucun indice pour cet élément sur cette case
  - . (En la couleur de l'élément): Il est certain que cet élément est sur cette case
  
-Le éléments:
+Les éléments:
  
  - M : Le Monstre
  - T : Un trou
