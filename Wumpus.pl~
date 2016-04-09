@@ -30,10 +30,14 @@
        sureNotMonstre/1,
        sureNotTrou/1,
        sureNotTresor/1,
+       poidChemin/1,
+       chemin/1,
        visite/1,
        safe/1,
        /*****DONNEES DE JEU******/
        direction/1,		  % 1=Nord; 2=Est; 3=Sud; 4=Ouest;
+       cri/0,
+       flecheTire/0,
        fleche/0,
        gagner/0,
        perdu/0,
@@ -120,9 +124,13 @@ initialisation :-
 	retractall(gagner),
 	retractall(perdu),
 	retractall(initVisite([_,_])),
+	retractall(poidChemin(_)),
+	retractall(chemin([_,_])),
 	retractall(tresorFoundable),
 	retractall(ascenseurFoundable),
 	assert(fleche),
+	retractall(cri),
+	retractall(flecheTire),
 	assert(direction(2)),
 	!.
 
@@ -153,8 +161,10 @@ initialiserMur :-
 	!.
 
 initialiserMonstre :-
-	random(1,5,X),
-	random(1,5,Y),
+/*	random(1,5,X),
+	random(1,5,Y),*/
+	X is 2,
+	Y is 1,
 	(
 	    estVide([X,Y]),
 	    assert(monstre([X,Y])),
@@ -252,10 +262,13 @@ miseAJourPredicat :-
 	    (
 	        not(not(monstre([X,Y]))),
 	        monstreTrouve(X,Y,1,1),
+		retractall(maybeMonstre([X,Y])),
+		retractall(sureNotMonstre([X,Y])),
 	        assert(sureMonstre([X,Y]))
 	    );
 	(
 	        not(monstre([X,Y])),
+		retractall(maybeMonstre([X,Y])),
 	        assert(sureNotMonstre([X,Y]))
 	    )
 	),
@@ -263,11 +276,14 @@ miseAJourPredicat :-
 	    (
 	        not(not(tresor([X,Y]))),
 	        tresorTrouve(X,Y,1,1),
+		retractall(maybeTresor([X,Y])),
+		retractall(sureNotTresor([X,Y])),
 	        assert(sureTresor([X,Y])),
 	        assert(tresorTrouve)
 	    );
 	(
 	        not(tresor([X,Y])),
+		retractall(maybeTresor([X,Y])),
 	        assert(sureNotTresor([X,Y]))
 	    )
 	),
@@ -275,21 +291,27 @@ miseAJourPredicat :-
 	    (
 	        not(not(ascenseur([X,Y]))),
 	        ascenseurTrouve(X,Y,1,1),
+		retractall(maybeAscenseur([X,Y])),
+		retractall(sureNotAscenseur([X,Y])),
 	        assert(sureAscenseur([X,Y])),
 	        assert(ascenseurTrouve)
 	    );
 	(
 	        not(ascenseur([X,Y])),
+		retractall(maybeAscenseur([X,Y])),
 	        assert(sureNotAscenseur([X,Y]))
 	    )
 	),
 	(
 	    (
 	        not(not(trou([X,Y]))),
+		retractall(maybeTrou([X,Y])),
+		retractall(sureNotTrou([X,Y])),
 	        assert(sureTrou([X,Y]))
 	    );
 	(
 	        not(trou([X,Y])),
+		retractall(maybeTrou([X,Y])),
 	        assert(sureNotTrou([X,Y]))
 	    )
 	),
@@ -641,13 +663,12 @@ miseAJourPredicatsCase(Xa,Ya) :-
 			      ((
 				   visite([Xb,Yb]),
 		                   odeur([Xb,Yb]),
-		                   getNumNotMonstreAutourCase(Xb,Yb,N),
-				   N == 3,
-		                   format("Monstre : ~p ~p ~p ~n",[N,Xb,Yb]),
 		                   Xup is Xb + 1,
 		                   Xdown is Xb -1,
 		                   Yup is Yb + 1,
 				   Ydown is Yb - 1,
+		                   getNumNotMonstreAutourCase(Xb,Yb,N),
+				   N == 3,
 		                   (((maybeMonstre([Xup,Yb]);(not(sureMonstre([Xup,Yb])),not(sureNotMonstre([Xup,Yb])))), not(mur([Xup,Yb])), retractall(maybeMonstre([Xup,Yb])), assert(sureMonstre([Xup,Yb])), monstreTrouve(Xup,Yb,1,1), assert(sureNotTrou([Xup,Yb])), assert(sureNotTresor([Xup,Yb])), assert(sureNotAscenseur([Xup,Yb])) );!),
 		                   (((maybeMonstre([Xdown,Yb]);(not(sureMonstre([Xdown,Yb])),not(sureNotMonstre([Xdown,Yb])))), not(mur([Xdown,Yb])), retractall(maybeMonstre([Xdown,Yb])), assert(sureMonstre([Xdown,Yb])), monstreTrouve(Xdown,Yb,1,1), assert(sureNotTrou([Xdown,Yb])), assert(sureNotTresor([Xdown,Yb])), assert(sureNotAscenseur([Xdown,Yb])) );!),
 		                   (((maybeMonstre([Xb,Yup]);(not(sureMonstre([Xb,Yup])),not(sureNotMonstre([Xb,Yup])))), not(mur([Xb,Yup])), retractall(maybeMonstre([Xb,Yup])), assert(sureMonstre([Xb,Yup])), monstreTrouve(Xb,Yup,1,1), assert(sureNotTrou([Xb,Yup])), assert(sureNotTresor([Xb,Yup])), assert(sureNotAscenseur([Xb,Yup])) );!),
@@ -658,30 +679,70 @@ miseAJourPredicatsCase(Xa,Ya) :-
 		                   bling([Xb,Yb]),
 		                   getNumNotTresorAutourCase(Xb,Yb,Nt),
 				   Nt == 3,
-				   format("Tresor : ~p ~p ~p ~n",[Nt,Xb,Yb]),
 		                   Xtup is Xb + 1,
 		                   Xtdown is Xb -1,
 		                   Ytup is Yb + 1,
 				   Ytdown is Yb - 1,
-		                   (((maybeTresor([Xtup,Yb]);(not(sureTresor([Xtup,Yb])),not(sureNotTresor([Xtup,Yb])))), not(mur([Xtup,Yb])), retractall(maybeTresor([Xtup,Yb])), assert(sureTresor([Xtup,Yb])), tresorTrouve(Xtup,Yb,1,1), assert(sureNotTrou([Xtup,Yb])), assert(sureNotMonstre([Xtup,Yb])), assert(sureNotAscenseur([Xtup,Yb])), assert(safe([Xtup,Yb])) );!),
-		                   (((maybeTresor([Xtdown,Yb]);(not(sureTresor([Xtdown,Yb])),not(sureNotTresor([Xtdown,Yb])))), not(mur([Xtdown,Yb])), retractall(maybeTresor([Xtdown,Yb])), assert(sureTresor([Xtdown,Yb])), tresorTrouve(Xtdown,Yb,1,1), assert(sureNotTrou([Xtdown,Yb])), assert(sureNotMonstre([Xtdown,Yb])), assert(sureNotAscenseur([Xtdown,Yb])), assert(safe([Xtdown,Yb])));!),
-		                   (((maybeTresor([Xb,Ytup]);(not(sureTresor([Xb,Ytup])),not(sureNotTresor([Xb,Ytup])))), not(mur([Xb,Ytup])), retractall(maybeTresor([Xb,Ytup])), assert(sureTresor([Xb,Ytup])), tresorTrouve(Xb,Ytup,1,1), assert(sureNotTrou([Xb,Ytup])), assert(sureNotMonstre([Xb,Ytup])), assert(sureNotAscenseur([Xb,Ytup])), assert(safe([Xb,Ytup])));!),
-		                   (((maybeTresor([Xb,Ytdown]);(not(sureTresor([Xb,Ytdown])),not(sureNotTresor([Xb,Ytdown])))), not(mur([Xb,Ytdown])), retractall(maybeTresor([Xb,Ytdown])), assert(sureTresor([Xb,Ytdown])), tresorTrouve(Xb,Ytdown,1,1), assert(sureNotTrou([Xb,Ytdown])), assert(sureNotMonstre([Xb,Ytdown])), assert(sureNotAscenseur([Xb,Ytdown])), assert(safe([Xb,Ytdown])));!)
+		                   (((maybeTresor([Xtup,Yb]);(not(sureTresor([Xtup,Yb])), not(sureNotTresor([Xtup,Yb])))), not(mur([Xtup,Yb])), retractall(maybeTresor([Xtup,Yb])), assert(sureTresor([Xtup,Yb])), tresorTrouve(Xtup,Yb,1,1), assert(sureNotTrou([Xtup,Yb])), assert(sureNotMonstre([Xtup,Yb])), assert(sureNotAscenseur([Xtup,Yb])),
+				    (
+				     not(sureMonstre([Xtup,Yb])),
+				     not(sureTrou([Xtup,Yb])),
+				     assert(safe([Xtup,Yb]))
+				    )
+				    );!),
+		                   (((maybeTresor([Xtdown,Yb]);(not(sureTresor([Xtdown,Yb])),not(sureNotTresor([Xtdown,Yb])))), not(mur([Xtdown,Yb])), retractall(maybeTresor([Xtdown,Yb])), assert(sureTresor([Xtdown,Yb])), tresorTrouve(Xtdown,Yb,1,1), assert(sureNotTrou([Xtdown,Yb])), assert(sureNotMonstre([Xtdown,Yb])), assert(sureNotAscenseur([Xtdown,Yb])),
+				     (
+				         not(sureMonstre([Xtdown,Yb])),
+				         not(sureTrou([Xtdown,Yb])),
+				         assert(safe([Xtdown,Yb]))
+				     )
+);!),
+		                   (((maybeTresor([Xb,Ytup]);(not(sureTresor([Xb,Ytup])),not(sureNotTresor([Xb,Ytup])))), not(mur([Xb,Ytup])), retractall(maybeTresor([Xb,Ytup])), assert(sureTresor([Xb,Ytup])), tresorTrouve(Xb,Ytup,1,1), assert(sureNotTrou([Xb,Ytup])), assert(sureNotMonstre([Xb,Ytup])), assert(sureNotAscenseur([Xb,Ytup])), (
+				         not(sureMonstre([Xb,Ytup])),
+				         not(sureTrou([Xb,Ytup])),
+				         assert(safe([Xb,Ytup]))
+				     )
+);!),
+		                   (((maybeTresor([Xb,Ytdown]);(not(sureTresor([Xb,Ytdown])),not(sureNotTresor([Xb,Ytdown])))), not(mur([Xb,Ytdown])), retractall(maybeTresor([Xb,Ytdown])), assert(sureTresor([Xb,Ytdown])), tresorTrouve(Xb,Ytdown,1,1), assert(sureNotTrou([Xb,Ytdown])), assert(sureNotMonstre([Xb,Ytdown])), assert(sureNotAscenseur([Xb,Ytdown])), (
+				         not(sureMonstre([Xb,Ytdown])),
+				         not(sureTrou([Xb,Ytdown])),
+				         assert(safe([Xb,Ytdown]))
+				     )
+);!)
 			      );!),
 			      ((
 				   visite([Xb,Yb]),
 		                   bruit([Xb,Yb]),
 		                   getNumNotAscenseurAutourCase(Xb,Yb,Na),
 				   Na == 3,
-				   format("Ascenseur : ~p ~p ~p ~n",[Na,Xb,Yb]),
 		                   Xaup is Xb + 1,
 		                   Xadown is Xb -1,
 		                   Yaup is Yb + 1,
 				   Yadown is Yb - 1,
-		                   (((maybeAscenseur([Xaup,Yb]);(not(sureAscenseur([Xaup,Yb])),not(sureNotAscenseur([Xaup,Yb])))), not(mur([Xaup,Yb])), retractall(maybeAscenseur([Xaup,Yb])), assert(sureAscenseur([Xaup,Yb])), ascenseurTrouve(Xaup,Yb,1,1), assert(sureNotTrou([Xaup,Yb])), assert(sureNotMonstre([Xaup,Yb])), assert(sureNotTresor([Xaup,Yb])), assert(safe([Xaup,Yb])));!),
-		                   (((maybeAscenseur([Xadown,Yb]);(not(sureAscenseur([Xadown,Yb])),not(sureNotAscenseur([Xadown,Yb])))), not(mur([Xadown,Yb])), retractall(maybeAscenseur([Xadown,Yb])), assert(sureAscenseur([Xadown,Yb])), ascenseurTrouve(Xadown,Yb,1,1), assert(sureNotTrou([Xadown,Yb])), assert(sureNotMonstre([Xadown,Yb])), assert(sureNotTresor([Xadown,Yb])), assert(safe([Xadown,Yb])));!),
-		                   (((maybeAscenseur([Xb,Yaup]);(not(sureAscenseur([Xb,Yaup])),not(sureNotAscenseur([Xb,Yaup])))), not(mur([Xb,Yaup])), retractall(maybeAscenseur([Xb,Yaup])), assert(sureAscenseur([Xb,Yaup])), ascenseurTrouve(Xb,Yaup,1,1), assert(sureNotTrou([Xb,Yaup])), assert(sureNotMonstre([Xb,Yaup])), assert(sureNotTresor([Xb,Yaup])), assert(safe([Xb,Yaup])));!),
-		                   (((maybeAscenseur([Xb,Yadown]);(not(sureAscenseur([Xb,Yadown])),not(sureNotAscenseur([Xb,Yadown])))), not(mur([Xb,Yadown])), retractall(maybeAscenseur([Xb,Yadown])), assert(sureAscenseur([Xb,Yadown])), ascenseurTrouve(Xb,Yadown,1,1), assert(sureNotTrou([Xb,Yadown])), assert(sureNotMonstre([Xb,Yadown])), assert(sureNotTresor([Xb,Yadown])), assert(safe([Xb,Yadown])));!)
+		                   (((maybeAscenseur([Xaup,Yb]);(not(sureAscenseur([Xaup,Yb])),not(sureNotAscenseur([Xaup,Yb])))), not(mur([Xaup,Yb])), retractall(maybeAscenseur([Xaup,Yb])), assert(sureAscenseur([Xaup,Yb])), ascenseurTrouve(Xaup,Yb,1,1), assert(sureNotTrou([Xaup,Yb])), assert(sureNotMonstre([Xaup,Yb])), assert(sureNotTresor([Xaup,Yb])), (
+				     not(sureMonstre([Xaup,Yb])),
+				     not(sureTrou([Xaup,Yb])),
+				     assert(safe([Xaup,Yb]))
+				    )
+);!),
+		                   (((maybeAscenseur([Xadown,Yb]);(not(sureAscenseur([Xadown,Yb])),not(sureNotAscenseur([Xadown,Yb])))), not(mur([Xadown,Yb])), retractall(maybeAscenseur([Xadown,Yb])), assert(sureAscenseur([Xadown,Yb])), ascenseurTrouve(Xadown,Yb,1,1), assert(sureNotTrou([Xadown,Yb])), assert(sureNotMonstre([Xadown,Yb])), assert(sureNotTresor([Xadown,Yb])), (
+				         not(sureMonstre([Xadown,Yb])),
+				         not(sureTrou([Xadown,Yb])),
+				         assert(safe([Xadown,Yb]))
+				     )
+);!),
+		                   (((maybeAscenseur([Xb,Yaup]);(not(sureAscenseur([Xb,Yaup])),not(sureNotAscenseur([Xb,Yaup])))), not(mur([Xb,Yaup])), retractall(maybeAscenseur([Xb,Yaup])), assert(sureAscenseur([Xb,Yaup])), ascenseurTrouve(Xb,Yaup,1,1), assert(sureNotTrou([Xb,Yaup])), assert(sureNotMonstre([Xb,Yaup])), assert(sureNotTresor([Xb,Yaup])), (
+				         not(sureMonstre([Xb,Yaup])),
+				         not(sureTrou([Xb,Yaup])),
+				         assert(safe([Xb,Yaup]))
+				     )
+);!),
+		                   (((maybeAscenseur([Xb,Yadown]);(not(sureAscenseur([Xb,Yadown])),not(sureNotAscenseur([Xb,Yadown])))), not(mur([Xb,Yadown])), retractall(maybeAscenseur([Xb,Yadown])), assert(sureAscenseur([Xb,Yadown])), ascenseurTrouve(Xb,Yadown,1,1), assert(sureNotTrou([Xb,Yadown])), assert(sureNotMonstre([Xb,Yadown])), assert(sureNotTresor([Xb,Yadown])), (
+				         not(sureMonstre([Xb,Yadown])),
+				         not(sureTrou([Xb,Yadown])),
+				         assert(safe([Xb,Yadown]))
+				     )
+);!)
 			      );!),
 		              ((sureNotMonstre([Xb,Yb]),sureNotTrou([Xb,Yb]),not(visite([Xb,Yb])), not(mur([Xb,Yb])),assert(safe([Xb,Yb])));!),
 		              Xc is Xb + 1,
@@ -734,6 +795,15 @@ getNumNotTresorAutourCase(X,Y,N) :-
 tresorTrouve(X,Y, Xa, Ya) :-
 	(
 	     (
+		 (
+		    Xa == 1,
+                    Ya == 1,
+                    retractall(maybeTresor([_,_])),
+                    retractall(sureTresor([_,_])),
+                    retractall(sureNotTresor([_,_]))
+		 );!
+	     ),
+	     (
 		 (Xa < 5, Xb is Xa, Yb is Ya);
 		 (Xa > 4, Xb is 1, Yb is Ya + 1)
 	     ),
@@ -744,8 +814,8 @@ tresorTrouve(X,Y, Xa, Ya) :-
 	           );
 	           (
 		         ((
-			     Xb == X, Yb == Y, retractall(sureNotTresor([Xb,Yb])),  retractall(maybeTresor([Xb,Yb]))
-		         );(
+			     Xb == X, Yb == Y, assert(sureTresor([Xb,Yb]))
+			  );(
 			     assert(sureNotTresor([Xb,Yb]))
 			 )),
 		         Xc is Xb + 1,
@@ -758,6 +828,15 @@ tresorTrouve(X,Y, Xa, Ya) :-
 ascenseurTrouve(X,Y, Xa, Ya) :-
 	(
 	     (
+		 (
+		    Xa == 1,
+                    Ya == 1,
+                    retractall(maybeAscenseur([_,_])),
+                    retractall(sureAscenseur([_,_])),
+                    retractall(sureNotAscenseur([_,_]))
+		 );!
+	     ),
+	     (
 		 (Xa < 5, Xb is Xa, Yb is Ya);
 		 (Xa > 4, Xb is 1, Yb is Ya + 1)
 	     ),
@@ -768,7 +847,7 @@ ascenseurTrouve(X,Y, Xa, Ya) :-
 	           );
 	           (
 		         ((
-			     Xb == X, Yb == Y, retractall(sureNotAscenseur([Xb,Yb])),  retractall(maybeAscenseur([Xb,Yb]))
+			     Xb == X, Yb == Y, assert(sureAscenseur([Xb,Yb]))
 		         );(
 			     assert(sureNotAscenseur([Xb,Yb]))
 			 )),
@@ -782,22 +861,60 @@ ascenseurTrouve(X,Y, Xa, Ya) :-
 monstreTrouve(X,Y, Xa, Ya) :-
 	(
 	     (
+		 (
+		    Xa == 1,
+                    Ya == 1,
+                    retractall(maybeMonstre([_,_])),
+                    retractall(sureMonstre([_,_])),
+                    retractall(sureNotMonstre([_,_]))
+		 );!
+	     ),
+	     (
 		 (Xa < 5, Xb is Xa, Yb is Ya);
 		 (Xa > 4, Xb is 1, Yb is Ya + 1)
 	     ),
 
              (
 		   (
-		         Ya > 4
+		         Yb > 4
 	           );
 	           (
 		         ((
-			     Xb == X, Yb == Y, retractall(sureNotMonstre([Xb,Yb])),  retractall(maybeMonstre([Xb,Yb]))
-		         );(
+			     Xb == X, Yb == Y, assert(sureMonstre([Xb,Yb]))
+			  );(
 			     assert(sureNotMonstre([Xb,Yb]))
 			 )),
 		         Xc is Xb + 1,
 	                 monstreTrouve(X,Y,Xc,Yb)
+		   )
+	     )
+	),
+	!.
+
+monstreTue :-
+	retractall(sureMonstre([_,_])),
+	retractall(maybeMonstre([_,_])),
+	retractall(sureNotMonstre([_,_])),
+	retractall(monstre([_,_])),
+	assert(cri),
+	monstreTue(1,1),
+	!.
+
+monstreTue(Xa,Ya) :-
+	(
+             (
+		 (Xa < 5, Xb is Xa, Yb is Ya);
+		 (Xa > 4, Xb is 1, Yb is Ya + 1)
+	     ),
+
+             (
+		   (
+		         Yb > 4
+	           );
+	           (
+                         assert(sureNotMonstre([Xb,Yb])),
+		         Xc is Xb + 1,
+	                 monstreTue(Xc,Yb)
 		   )
 	     )
 	),
@@ -809,7 +926,7 @@ monstreTrouve(X,Y, Xa, Ya) :-
 
 boucleDeJeu(P) :-
 	(
-            etapeSuivante,
+            etapeSuivante(P),
             verifierEtatJeu,
             afficherJeu(P),
             sleep(1),
@@ -835,19 +952,30 @@ verifierEtatJeu :-
 
 /*******************IA**********************/
 
-etapeSuivante :-
-	getProchaineEtape(X,Y),
+etapeSuivante(P) :-
+	getProchaineEtape(X,Y,P),
 	bougerJoueur([X,Y]),
 	!.
 
-getProchaineEtape(X,Y) :-
+getProchaineEtape(X,Y,P) :-
 	(
             (
                 not(not(tresorTrouve)),
                 not(not(ascenseurTrouve)),
                 getAscenseur(X,Y,1,1)
 	    );
-	    getProchaineEtapeSafe(X,Y,0,0)
+	    assert(poidChemin(10)),
+	    assert(chemin([1,1])),
+            getProchaineEtapeSafe(X,Y,0,0),
+            (
+		(
+		    poidChemin(N),
+		    (N == 2; N == 3),
+		    tirerFleche(X,Y,P)
+		);!
+	    ),
+            assert(chemin([_,_])),
+            retractall(poidChemin(_))
         ),
 	!.
 
@@ -861,46 +989,189 @@ getProchaineEtapeSafe(X,Y,Xa,Ya) :-
              (
 		   (
 		         Ya > 5,
-		         getProchaineEtapeNonSafe(X,Y,0,0)
+		         chemin([Xch,Ych]),
+		         X is Xch,
+			 Y is Ych
 		   );
 	           (
 	                 (
-                              not(not(safe([Xb,Yb]))),
-		              not(visite([Xb,Yb])),
-			      X is Xb,
-                              Y is Yb
-	                 );
-	                 (
+		              (
+		                  not(visite([Xb,Yb])),
+		                  not(sureMonstre([Xb,Yb])),
+		                  not(sureTrou([Xb,Yb])),
+		                  (
+				      (
+				          safe([Xb,Yb]),
+				          Va is 0
+				      );
+				      (
+					  not(safe([Xb,Yb])),
+				          (maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
+				          Va is 1
+				      );
+				      (
+					  not(safe([Xb,Yb])),
+					  not(maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
+				          sureMonstre([Xb,Yb]),fleche,
+				          Va is 2
+				      );
+				      (
+					  not(safe([Xb,Yb])),
+					  not(maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
+					  not(sureMonstre([Xb,Yb])),
+				          maybeMonstre([Xb,Yb]),fleche,
+				          Va is 3
+				      );
+				      (
+					  not(maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
+					  not(safe([Xb,Yb])),
+					  not(maybeMonstre([Xb,Yb])),not(sureMonstre([Xb,Yb])),
+					  (maybeTrou([Xb,Yb]);(maybeMonstre([Xb,Yb]),not(fleche))),
+					  Va is 9
+				      )
+			          ),
+		                  (
+				      poidChemin(V),
+				      Va < V,
+				      retractall(poidChemin(_)),
+				      retractall(chemin([_,_])),
+				      assert(poidChemin(Va)),
+				      assert(chemin([Xb,Yb]))
+				  )
+			      ;!),
 		              Xc is Xb + 1,
-	                      getProchaineEtapeSafe(X,Y,Xc,Yb)
-		         )
+		              getProchaineEtapeSafe(X,Y,Xc,Yb)
+	                 );!
 		   )
 	     )
 	),
 	!.
 
-getProchaineEtapeNonSafe(X,Y,Xa,Ya) :-
+tirerFleche(Xm,Ym, P):-
+        getOdeurVisite(Xo,Yo),
+	bougerJoueur([Xo,Yo]),
+	(
+	    (Xo == Xm, Ym > Yo, tournerJoueur(1));
+	    (Xo < Xm, Ym == Yo, tournerJoueur(2));
+	    (Xo == Xm, Ym > Yo, tournerJoueur(3));
+	    (Xo > Xm, Ym == Yo, tournerJoueur(4))
+	),
+	tirerFleche,
+	afficherJeu(P),
+	sleep(1),
+	retractall(flecheTire),
+	!.
+
+tirerFleche :-
+	assert(flecheTire),
+	getJoueur(X,Y,0,0),
+	getDirection(D,1),
+	(
+	    (
+	        D == 1,
+		Yup is Y + 1,
+	        (   (
+		    monstre([X,Yup]),
+		    monstreTue
+		);
+	        (
+		    not(monstre([X,Yup])),
+		    flecheTire(X,Yup,D)
+		))
+	    );
+	    (
+	        D == 2,
+		Xup is X + 1,
+		(   (
+		    monstre([Xup,Y]),
+		    monstreTue
+		);
+	        (
+		    not(monstre([Xup,Y])),
+		    flecheTire(Xup,Y,D)
+		))
+	    );
+	    (
+	        D == 3,
+		Ydown is Y + 1,
+	        (   (
+		    monstre([X,Ydown]),
+		    monstreTue
+		);
+	        (
+		    not(monstre([X,Ydown])),
+		    flecheTire(X,Ydown,D)
+		))
+	    );
+	    (
+	        D == 4,
+		Xdown is X - 1,
+		(   (
+		    monstre([Xdown,Y]),
+		    monstreTue
+		);
+	        (
+		    not(monstre([Xdown,Y])),
+		    flecheTire(Xdown,Y,D)
+		))
+	    )
+	),
+	!.
+
+flecheTire(X,Y,D) :-
+	(
+	    (
+                mur([X,Y])
+	    );
+	(
+        retractall(sureMonstre([X,Y])),
+	retractall(maybeMonstre([X,Y])),
+	assert(sureNotMonstre([X,Y])),
+	(
+	    (
+	        D == 1,
+	        Ya is Y + 1,
+	        Xa is X
+	    );
+	    (
+	        D == 2,
+	        Ya is Y,
+	        Xa is X + 1
+	    );
+	    (
+	        D == 3,
+	        Ya is Y - 1,
+	        Xa is X
+	    );
+	    (
+	        D == 4,
+	        Ya is Y,
+	        Xa is X - 1
+	    )
+	),
+	flecheTire(Xa,Ya, D)
+	)),
+	!.
+
+getOdeurVisite(Xo,Yo) :-
+	getOdeurVisite(Xo,Yo,1,1),
+	!.
+
+getOdeurVisite(Xo,Yo,Xa,Ya) :-
 	(
 	     (
-		 (Xa < 6, Xb is Xa, Yb is Ya);
-		 (Xa > 5, Xb is 0, Yb is Ya + 1)
+		 (Xa < 5, Xb is Xa, Yb is Ya);
+		 (Xa > 4, Xb is 1, Yb is Ya + 1)
 	     ),
 
              (
 		   (
-		         Ya > 5
+		         Yb > 4;
+			(visite([Xb,Yb]), odeur([Xb,Yb]), Xo is Xb, Yo is Yb)
 	           );
 	           (
-	                 (
-                              (not(not(maybeMonstre([Xb,Yb])));not(not(maybeTrou([Xb,Yb])))),
-		              not(visite([Xb,Yb])),
-			      X is Xb,
-                              Y is Yb
-	                 );
-	                 (
-		              Xc is Xb + 1,
-	                      getProchaineEtapeNonSafe(X,Y,Xc,Yb)
-		         )
+		         Xc is Xb + 1,
+	                 getOdeurVisite(Xo,Yo,Xc,Yb)
 		   )
 	     )
 	),
@@ -914,7 +1185,6 @@ tournerJoueur(X) :-
 	!.
 
 bougerJoueur([X,Y]) :-
-	format("Joueur: ~p ~p ~n", [X,Y]),
 	retractall(joueur([_,_])),
 	assert(joueur([X,Y])),
 	miseAJourPredicat,
@@ -1031,10 +1301,18 @@ afficherJeu(P) :-
 	send(T,next_row),
 	(
 	    (
+	         flecheTire,
+	         cri,
+		 send(T,append("Le Joueur tire... Et touche!", bold, center, valign := center, colour := white, background := blue, rowspan := 1, colspan := 6))
+	    );
+	    (
+	         flecheTire,
+		 send(T,append("Le Joueur tire... Mais ne touche pas!", bold, center, valign := center, colour := black, background := yellow, rowspan := 1, colspan := 6))
+	    );
+	    (
 	         (not(ascenseurFoundable); not(tresorFoundable)),
 		 send(T,append("Le Jeu n'a pas de solution...", bold, center, valign := center, colour := white, background := black, rowspan := 1, colspan := 6))
 	    );
-
 	    (
 	         not(not(gagner)),
 		 send(T,append("Gagné", bold, center, valign := center, colour := black, background := green, rowspan := 1, colspan := 6))
