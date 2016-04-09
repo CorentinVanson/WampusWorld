@@ -36,7 +36,11 @@
        direction/1,		  % 1=Nord; 2=Est; 3=Sud; 4=Ouest;
        fleche/0,
        gagner/0,
-       perdu/0
+       perdu/0,
+       /****PARCOURS INITIAL****/
+       initVisite/1,
+       tresorFoundable/0,
+       ascenseurFoundable/0
    ]).
 
 start :-
@@ -45,9 +49,31 @@ start :-
 
 start(P) :-
 	initialise,
+	parcoursInit,
 	afficherJeu(P),
 	sleep(1),
-	boucleDeJeu(P).
+	(   (
+	    (not(tresorFoundable);not(ascenseurFoundable)),
+	    start(P)
+	);boucleDeJeu(P)).
+
+parcoursInit :-
+	parcoursInit(1,1),
+	!.
+
+parcoursInit(X,Y) :-
+	assert(initVisite([X,Y])),
+	((tresor([X,Y]),assert(tresorFoundable));!),
+	((ascenseur([X,Y]),assert(ascenseurFoundable));!),
+	Xp is X + 1,
+	Xm is X - 1,
+	Yp is Y + 1,
+	Ym is Y - 1,
+	((not(mur([Xp,Y])), not(trou([Xp,Y])), not(initVisite([Xp,Y])), parcoursInit(Xp,Y));!),
+	((not(mur([Xm,Y])), not(trou([Xm,Y])), not(initVisite([Xm,Y])), parcoursInit(Xm,Y));!),
+	((not(mur([X,Yp])), not(trou([X,Yp])), not(initVisite([X,Yp])), parcoursInit(X,Yp));!),
+	((not(mur([X,Ym])), not(trou([X,Ym])), not(initVisite([X,Ym])), parcoursInit(X,Ym));!),
+	!.
 
 /*******************************************/
 /**************INITIALISATION***************/
@@ -93,6 +119,9 @@ initialisation :-
 	retractall(ascenseurTrouve),
 	retractall(gagner),
 	retractall(perdu),
+	retractall(initVisite([_,_])),
+	retractall(tresorFoundable),
+	retractall(ascenseurFoundable),
 	assert(fleche),
 	assert(direction(2)),
 	!.
@@ -865,6 +894,8 @@ getProchaineEtapeNonSafe(X,Y,Xa,Ya) :-
 	                 (
                               (not(not(maybeMonstre([Xb,Yb])));not(not(maybeTrou([Xb,Yb])))),
 		              not(visite([Xb,Yb])),
+		              not(sureMonstre([Xb,Yb])),
+		              not(sureTrou([Xb,Yb])),
 			      X is Xb,
                               Y is Yb
 	                 );
@@ -1001,6 +1032,11 @@ afficherJeu(P) :-
 	afficherElements(T,0,5),
 	send(T,next_row),
 	(
+	    (
+	         (not(ascenseurFoundable); not(tresorFoundable)),
+		 send(T,append("Le Jeu n'a pas de solution...", bold, center, valign := center, colour := white, background := black, rowspan := 1, colspan := 6))
+	    );
+
 	    (
 	         not(not(gagner)),
 		 send(T,append("Gagné", bold, center, valign := center, colour := black, background := green, rowspan := 1, colspan := 6))

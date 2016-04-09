@@ -36,7 +36,11 @@
        direction/1,		  % 1=Nord; 2=Est; 3=Sud; 4=Ouest;
        fleche/0,
        gagner/0,
-       perdu/0
+       perdu/0,
+       /****PARCOURS INITIAL****/
+       initVisite/1,
+       tresorFoundable/0,
+       ascenseurFoundable/0
    ]).
 
 start :-
@@ -45,9 +49,31 @@ start :-
 
 start(P) :-
 	initialise,
+	parcoursInit,
 	afficherJeu(P),
 	sleep(1),
-	boucleDeJeu(P).
+	(   (
+	    (not(tresorFoundable);not(ascenseurFoundable)),
+	    start(P)
+	);boucleDeJeu(P)).
+
+parcoursInit :-
+	parcoursInit(1,1),
+	!.
+
+parcoursInit(X,Y) :-
+	assert(initVisite([X,Y])),
+	((tresor([X,Y]),assert(tresorFoundable));!),
+	((ascenseur([X,Y]),assert(ascenseurFoundable));!),
+	Xp is X + 1,
+	Xm is X - 1,
+	Yp is Y + 1,
+	Ym is Y - 1,
+	((not(mur([Xp,Y])), not(trou([Xp,Y])), not(initVisite([Xp,Y])), parcoursInit(Xp,Y));!),
+	((not(mur([Xm,Y])), not(trou([Xm,Y])), not(initVisite([Xm,Y])), parcoursInit(Xm,Y));!),
+	((not(mur([X,Yp])), not(trou([X,Yp])), not(initVisite([X,Yp])), parcoursInit(X,Yp));!),
+	((not(mur([X,Ym])), not(trou([X,Ym])), not(initVisite([X,Ym])), parcoursInit(X,Ym));!),
+	!.
 
 /*******************************************/
 /**************INITIALISATION***************/
@@ -93,6 +119,9 @@ initialisation :-
 	retractall(ascenseurTrouve),
 	retractall(gagner),
 	retractall(perdu),
+	retractall(initVisite([_,_])),
+	retractall(tresorFoundable),
+	retractall(ascenseurFoundable),
 	assert(fleche),
 	assert(direction(2)),
 	!.
@@ -634,10 +663,10 @@ miseAJourPredicatsCase(Xa,Ya) :-
 		                   Xtdown is Xb -1,
 		                   Ytup is Yb + 1,
 				   Ytdown is Yb - 1,
-		                   (((maybeTresor([Xtup,Yb]);(not(sureTresor([Xtup,Yb])),not(sureNotTresor([Xtup,Yb])))), not(mur([Xtup,Yb])), retractall(maybeTresor([Xtup,Yb])), assert(sureTresor([Xtup,Yb])), ascenseurTrouve(Xtup,Yb,1,1), assert(sureNotTrou([Xtup,Yb])), assert(sureNotMonstre([Xtup,Yb])), assert(sureNotAscenseur([Xtup,Yb])), assert(safe([Xtup,Yb])) );!),
-		                   (((maybeTresor([Xtdown,Yb]);(not(sureTresor([Xtdown,Yb])),not(sureNotTresor([Xtdown,Yb])))), not(mur([Xtdown,Yb])), retractall(maybeTresor([Xtdown,Yb])), assert(sureTresor([Xtdown,Yb])), ascenseurTrouve(Xtdown,Yb,1,1), assert(sureNotTrou([Xtdown,Yb])), assert(sureNotMonstre([Xtdown,Yb])), assert(sureNotAscenseur([Xtdown,Yb])), assert(safe([Xtdown,Yb])));!),
-		                   (((maybeTresor([Xb,Ytup]);(not(sureTresor([Xb,Ytup])),not(sureNotTresor([Xb,Ytup])))), not(mur([Xb,Ytup])), retractall(maybeTresor([Xb,Ytup])), assert(sureTresor([Xb,Ytup])), ascenseurTrouve(Xb,Ytup,1,1), assert(sureNotTrou([Xb,Ytup])), assert(sureNotMonstre([Xb,Ytup])), assert(sureNotAscenseur([Xb,Ytup])), assert(safe([Xb,Ytup])));!),
-		                   (((maybeTresor([Xb,Ytdown]);(not(sureTresor([Xb,Ytdown])),not(sureNotTresor([Xb,Ytdown])))), not(mur([Xb,Ytdown])), retractall(maybeTresor([Xb,Ytdown])), assert(sureTresor([Xb,Ytdown])), ascenseurTrouve(Xb,Ytdown,1,1), assert(sureNotTrou([Xb,Ytdown])), assert(sureNotMonstre([Xb,Ytdown])), assert(sureNotAscenseur([Xb,Ytdown])), assert(safe([Xb,Ytdown])));!)
+		                   (((maybeTresor([Xtup,Yb]);(not(sureTresor([Xtup,Yb])),not(sureNotTresor([Xtup,Yb])))), not(mur([Xtup,Yb])), retractall(maybeTresor([Xtup,Yb])), assert(sureTresor([Xtup,Yb])), tresorTrouve(Xtup,Yb,1,1), assert(sureNotTrou([Xtup,Yb])), assert(sureNotMonstre([Xtup,Yb])), assert(sureNotAscenseur([Xtup,Yb])), assert(safe([Xtup,Yb])) );!),
+		                   (((maybeTresor([Xtdown,Yb]);(not(sureTresor([Xtdown,Yb])),not(sureNotTresor([Xtdown,Yb])))), not(mur([Xtdown,Yb])), retractall(maybeTresor([Xtdown,Yb])), assert(sureTresor([Xtdown,Yb])), tresorTrouve(Xtdown,Yb,1,1), assert(sureNotTrou([Xtdown,Yb])), assert(sureNotMonstre([Xtdown,Yb])), assert(sureNotAscenseur([Xtdown,Yb])), assert(safe([Xtdown,Yb])));!),
+		                   (((maybeTresor([Xb,Ytup]);(not(sureTresor([Xb,Ytup])),not(sureNotTresor([Xb,Ytup])))), not(mur([Xb,Ytup])), retractall(maybeTresor([Xb,Ytup])), assert(sureTresor([Xb,Ytup])), tresorTrouve(Xb,Ytup,1,1), assert(sureNotTrou([Xb,Ytup])), assert(sureNotMonstre([Xb,Ytup])), assert(sureNotAscenseur([Xb,Ytup])), assert(safe([Xb,Ytup])));!),
+		                   (((maybeTresor([Xb,Ytdown]);(not(sureTresor([Xb,Ytdown])),not(sureNotTresor([Xb,Ytdown])))), not(mur([Xb,Ytdown])), retractall(maybeTresor([Xb,Ytdown])), assert(sureTresor([Xb,Ytdown])), tresorTrouve(Xb,Ytdown,1,1), assert(sureNotTrou([Xb,Ytdown])), assert(sureNotMonstre([Xb,Ytdown])), assert(sureNotAscenseur([Xb,Ytdown])), assert(safe([Xb,Ytdown])));!)
 			      );!),
 			      ((
 				   visite([Xb,Yb]),
@@ -1001,6 +1030,11 @@ afficherJeu(P) :-
 	afficherElements(T,0,5),
 	send(T,next_row),
 	(
+	    (
+	         (not(ascenseurFoundable); not(tresorFoundable)),
+		 send(T,append("Le Jeu n'a pas de solution...", bold, center, valign := center, colour := white, background := black, rowspan := 1, colspan := 6))
+	    );
+
 	    (
 	         not(not(gagner)),
 		 send(T,append("Gagné", bold, center, valign := center, colour := black, background := green, rowspan := 1, colspan := 6))
