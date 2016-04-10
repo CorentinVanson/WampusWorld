@@ -1004,27 +1004,38 @@ getProchaineEtapeSafe(X,Y,Xa,Ya) :-
 				      );
 				      (
 					  not(safe([Xb,Yb])),
-				          (maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
-				          Va is 1
-				      );
-				      (
-					  not(safe([Xb,Yb])),
-					  not(maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
-				          sureMonstre([Xb,Yb]),fleche,
+					  sureMonstre([Xb,Yb]),fleche,
 				          Va is 2
 				      );
 				      (
 					  not(safe([Xb,Yb])),
-					  not(maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
 					  not(sureMonstre([Xb,Yb])),
 				          maybeMonstre([Xb,Yb]),fleche,
 				          Va is 3
 				      );
 				      (
-					  not(maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
 					  not(safe([Xb,Yb])),
-					  not(maybeMonstre([Xb,Yb])),not(sureMonstre([Xb,Yb])),
-					  (maybeTrou([Xb,Yb]);(maybeMonstre([Xb,Yb]),not(fleche))),
+					  not(sureMonstre([Xb,Yb])),
+					  not(sureTrou([Xb,Yb])),
+					  (not(maybeMonstre([Xb,Yb]));not(fleche)),
+				          (maybeAscenseur([Xb,Yb]);maybeTresor([Xb,Yb])),
+				          Va is 4
+				      );
+				      (
+					  not(maybeAscenseur([Xb,Yb])),
+					  not(maybeTresor([Xb,Yb])),
+					  not(safe([Xb,Yb])),
+					  not(maybeMonstre([Xb,Yb])),
+					  not(sureMonstre([Xb,Yb])),
+					  (
+
+					          maybeTrou([Xb,Yb]);
+						 (
+						      maybeMonstre([Xb,Yb]),
+						      not(fleche)
+						 )
+
+					  ),
 					  Va is 9
 				      )
 			          ),
@@ -1055,6 +1066,7 @@ tirerFleche(Xm,Ym, P):-
 	    (Xo > Xm, Ym == Yo, tournerJoueur(4))
 	),
 	tirerFleche,
+	miseAJourPredicat,
 	afficherJeu(P),
 	sleep(1),
 	retractall(flecheTire),

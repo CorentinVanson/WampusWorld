@@ -11,7 +11,7 @@
        tresor/1,
        ascenseur/1,
        trou/1,
-       souffle/1,
+       souffle/2,
        odeur/1,
        bruit/1,
        bling/1,
@@ -98,7 +98,7 @@ initialisation :-
 	retractall(mur([_,_])),
 	retractall(monstre([_,_])),
 	retractall(trou([_,_])),
-	retractall(souffle([_,_])),
+	retractall(souffle([_,_],_)),
 	retractall(bling([_,_])),
 	retractall(tresor([_,_])),
 	retractall(ascenseur([_,_])),
@@ -217,7 +217,28 @@ initialiserAscenseur :-
 	!.
 
 initialiserTrous(Nb) :-
+	initSouffles(0,0),
 	assignerTrous(Nb),
+	!.
+
+initSouffles(Xa,Ya) :-
+	(
+             (
+		 (Xa < 6, Xb is Xa, Yb is Ya);
+		 (Xa > 5, Xb is 0, Yb is Ya + 1)
+	     ),
+
+             (
+		   (
+		         Yb > 5
+	           );
+	           (
+		         assert(souffle([Xb,Yb],0)),
+			 Xc is Xb + 1,
+		         initSouffles(Xc,Yb)
+		   )
+	     )
+	),
 	!.
 
 assignerTrous(Nb) :-
@@ -234,10 +255,30 @@ assignerTrous(Nb) :-
 	    Xm is X - 1,
 	    Yp is Y + 1,
 	    Ym is Y - 1,
-	    assert(souffle([X,Ym])),
-	    assert(souffle([X,Yp])),
-	    assert(souffle([Xm,Y])),
-	    assert(souffle([Xp,Y])),
+	    (
+		souffle([X,Ym],A),
+		Aa is A + 1,
+		retractall(souffle([X,Ym],_)),
+		assert(souffle([X,Ym],Aa))
+	    ),
+	    (
+		souffle([X,Yp],Z),
+		Za is Z + 1,
+		retractall(souffle([X,Yp],_)),
+		assert(souffle([X,Yp],Za))
+	    ),
+	    (
+		souffle([Xp,Y],E),
+		Ea is E + 1,
+		retractall(souffle([Xp,Y],_)),
+		assert(souffle([Xp,Y],Ea))
+	    ),
+	    (
+		souffle([Xm,Y],R),
+		Ra is R + 1,
+		retractall(souffle([Xm,Y],_)),
+		assert(souffle([Xm,Y],Ra))
+	    ),
 	    Nbb is Nb - 1,
 	    (
 			    Nbb =< 0;
@@ -314,7 +355,7 @@ miseAJourPredicat :-
 	    )
 	),
 	(   (
-	    not(souffle([X,Y])),
+	    (souffle([X,Y],A),A=<0),
 	    not(odeur([X,Y])),
 	    ((Xa is X,Ya is Y + 1, not(mur([Xa,Ya])),not(visite([Xa,Ya])), assert(safe([Xa,Ya])));!),
 	    ((Xb is X,Yb is Y - 1, not(mur([Xb,Yb])),not(visite([Xb,Yb])), assert(safe([Xb,Yb])));!),
@@ -401,7 +442,7 @@ miseAJourPredicat :-
 	    );!)
 	);!),
 	(   (
-	    not(not(souffle([X,Y]))),
+	    (souffle([X,Y], Z), Z>0),
 	    Xup is X + 1,
 	    Xdown is X - 1,
 	    Yup is Y + 1,
@@ -436,7 +477,7 @@ miseAJourPredicat :-
 	    );!)
 	);
 	(
-	    not(souffle([X,Y])),
+	    (souffle([X,Y],R),R=<0),
 	    Xup is X + 1,
 	    Xdown is X - 1,
 	    Yup is Y + 1,
@@ -654,7 +695,7 @@ miseAJourPredicatsCase(Xa,Ya) :-
 
              (
 		   (
-		         Ya > 5
+		         Yb > 5
 	           );
 	           (
 	                 (
@@ -808,7 +849,7 @@ tresorTrouve(X,Y, Xa, Ya) :-
 
              (
 		   (
-		         Ya > 4
+		         Yb > 4
 	           );
 	           (
 		         ((
@@ -841,7 +882,7 @@ ascenseurTrouve(X,Y, Xa, Ya) :-
 
              (
 		   (
-		         Ya > 4
+		         Yb > 4
 	           );
 	           (
 		         ((
@@ -968,7 +1009,6 @@ getProchaineEtape(X,Y,P) :-
             (
 		(
 		    poidChemin(N),
-		    format("Poid ~p ~n",[N]),
 		    (N == 2; N == 3),
 		    tirerFleche(X,Y,P)
 		);!
@@ -987,7 +1027,7 @@ getProchaineEtapeSafe(X,Y,Xa,Ya) :-
 
              (
 		   (
-		         Ya > 5,
+		         Yb > 5,
 		         chemin([Xch,Ych]),
 		         X is Xch,
 			 Y is Ych
@@ -1386,10 +1426,25 @@ afficherElements(T,X,Y) :-
 	    ),
 	    (
 		(
-		     not(souffle([Xb,Yb])),
-		     send(Q,append("s", bold, center, colour := white, background := gray))
+		     (souffle([Xb,Yb],E), E=<0),
+		     send(Q,append("0", bold, center, colour := white, background := gray))
 	        );
-		send(Q,append("s", bold, center, colour := white, background := red))
+(
+		     (souffle([Xb,Yb],E), E==1),
+		     send(Q,append("1", bold, center, colour := white, background := red))
+	        );
+(
+		     (souffle([Xb,Yb],E), E==2),
+		     send(Q,append("2", bold, center, colour := white, background := red))
+	        );
+(
+		     (souffle([Xb,Yb],E), E==3),
+		     send(Q,append("3", bold, center, colour := white, background := red))
+	        );
+(
+		     (souffle([Xb,Yb],E), E>3),
+		     send(Q,append("+", bold, center, colour := white, background := red))
+	        )
 	    ),
 	    (
 		(
