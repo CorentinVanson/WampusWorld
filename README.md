@@ -48,7 +48,7 @@ En bas à gauche, nous avons les déductions du joueur:
  - ~ (En gris): Il n'a aucun indice pour cet élément sur cette case
  - . (En la couleur de l'élément): Il est certain que cet élément est sur cette case
  
-Les éléments:
+Le éléments:
  
  - M : Le Monstre
  - T : Un trou
@@ -59,6 +59,31 @@ Puis pour finir, en bas à droite nous avons l'état de la case:
 
  - V (En beige): La case a déjà été visitée
  - S (En vert): La case est considérée comme sûre par le Joueur
+
+## Partie 2 ##
+
+L'interface du deuxième programme change un peu. 
+Le souffle est remplacé par le nombre de trou sur les cases voisines.
+
+## Intelligence artificielle ##
+
+Le joueur est commandé par une intelligence artificielle qui lui permet de faire des choix.
+
+Les choix sont fait en fonction de priorités : 
+
+ - Si le joueur a trouvé le trésor et connais l'ascenseur, il y va
+ - Une case définie comme safe, où le joueur sait qu'il ne risque rien
+ - Si'il a déjà visité une case avec odeur, et si il lui reste une fleche, il y va, et il tire dans une direction où le monstre est sûr d'être 
+ - Si'il a déjà visité une case avec odeur, et si il lui reste une fleche, il y va, et il tire dans une direction où le monstre peut être 
+ - Sinon il tente un coup risqué avec une case au hasard
+
+Pour le déplacement, le joueur ne peut aller uniquement que dans les cases voisines aux cases qu'il a déjà visité, sauf dans le cas où il veut tirer une flèche, là il peut aller sur une case odeur qu'il aurait déjà visité.
+Cela permet de s'assurer qu'il existe un chemin sûr jusque cette case, donc le joueur peut y aller sans risque.
+
+Pour ce qui est des prédicats, ils sont mit à jour à chaque déplacement. 
+Tout d'abord on met à jour les prédicats de la case visitée, puis on metà jour les prédicats sur les cases voisines, grâce aux indices de notre case.
+Puis, étant donné que des déductions sont faites sur les cases voisines, il est possible que nous pouvons faire des déductions sur des cases plus éloignées.
+C'est pourquoi nous mettons ensuite à jour tous les prédicats de toutes les cases.
  
 ------ 
-2016 - Corentin Vanson
+2016 - Corentin Vanson / Clément Grégoire
