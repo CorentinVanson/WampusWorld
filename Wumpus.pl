@@ -47,10 +47,12 @@
        ascenseurFoundable/0
    ]).
 
+%Premier Lancement avec création fenetre
 start :-
 	new(P, picture('Wumpus World', size(725,550))),
 	start(P).
 
+%Lancements suivants sans création de fenetre
 start(P) :-
 	initialise,
 	parcoursInit,
@@ -61,10 +63,13 @@ start(P) :-
 	    start(P)
 	);boucleDeJeu(P)).
 
+%Parcours initial pour voir s'il y a une solution au jeu
 parcoursInit :-
 	parcoursInit(1,1),
 	!.
 
+% Parcours de la carte, si on croise un trou, on ne peut avancer, si on
+% croise le trésor et l'ascenseur, c'est ok
 parcoursInit(X,Y) :-
 	assert(initVisite([X,Y])),
 	((tresor([X,Y]),assert(tresorFoundable));!),
@@ -83,6 +88,8 @@ parcoursInit(X,Y) :-
 /**************INITIALISATION***************/
 /*******************************************/
 
+% Initialisation de tout + mise a our de prédicat pour la situation
+% initiale
 initialise :-
 	initialisation,
 	initialiserJoueur,
@@ -93,6 +100,7 @@ initialise :-
 	initialiserTrous(3),
 	miseAJourPredicat.
 
+% Tout à 0
 initialisation :-
 	retractall(joueur([_,_])),
 	retractall(mur([_,_])),
@@ -134,9 +142,12 @@ initialisation :-
 	assert(direction(2)),
 	!.
 
+% Placement du joueur, on le place en premier, on sait qu'on peut le
+% mettre là
 initialiserJoueur :-
 	assert(joueur([1,1])).
 
+% Placements des murs, représente le bors de la carte
 initialiserMur :-
 	assert(mur([0,0])),
 	assert(mur([0,1])),
@@ -160,6 +171,7 @@ initialiserMur :-
 	assert(mur([1,0])),
 	!.
 
+% Initialisation du Monstre au hasard sur la carte
 initialiserMonstre :-
 	random(1,5,X),
 	random(1,5,Y),
@@ -179,6 +191,7 @@ initialiserMonstre :-
 	initialiserMonstre,
 	!.
 
+% Initialisation du Tresor au hasard sur la carte
 initialiserTresor :-
 	random(1,5,X),
 	random(1,5,Y),
@@ -198,6 +211,7 @@ initialiserTresor :-
 	initialiserTresor,
 	!.
 
+% Initialisation de l'ascenseur au hasard sur la carte
 initialiserAscenseur :-
 	random(1,5,X),
 	random(1,5,Y),
@@ -216,10 +230,13 @@ initialiserAscenseur :-
 	initialiserAscenseur,
 	!.
 
+% Placement de Nb Trous
 initialiserTrous(Nb) :-
 	assignerTrous(Nb),
 	!.
 
+% Fonction récursive pour placer un trou. Nb est le nombre restant de
+% trou a placer
 assignerTrous(Nb) :-
 	random(1,5,X),
 	random(1,5,Y),
@@ -251,11 +268,14 @@ assignerTrous(Nb) :-
 /****************PREDICAT*******************/
 /*******************************************/
 
-
+% Mise a jour des prédicats autour du Joueur
 miseAJourPredicat :-
+	% Prend la position du joueur
 	getJoueur(X,Y,1,1),
+	% On dit que la case actuelle est visitée
 	assert(visite([X,Y])),
 	retractall(safe([X,Y])),
+	%Si il y a un monstre
 	(
 	    (
 	        not(not(monstre([X,Y]))),
@@ -263,7 +283,7 @@ miseAJourPredicat :-
 		retractall(maybeMonstre([X,Y])),
 		retractall(sureNotMonstre([X,Y])),
 	        assert(sureMonstre([X,Y]))
-	    );
+	    );% Sinon
 	(
 	        not(monstre([X,Y])),
 		retractall(maybeMonstre([X,Y])),
@@ -271,6 +291,7 @@ miseAJourPredicat :-
 	    )
 	),
 	(
+	    %Si il y a un trésor
 	    (
 	        not(not(tresor([X,Y]))),
 	        tresorTrouve(X,Y,1,1),
@@ -278,7 +299,7 @@ miseAJourPredicat :-
 		retractall(sureNotTresor([X,Y])),
 	        assert(sureTresor([X,Y])),
 	        assert(tresorTrouve)
-	    );
+	    );%Sinon
 	(
 	        not(tresor([X,Y])),
 		retractall(maybeTresor([X,Y])),
@@ -286,6 +307,7 @@ miseAJourPredicat :-
 	    )
 	),
 	(
+	    %Si il y a un ascenseur
 	    (
 	        not(not(ascenseur([X,Y]))),
 	        ascenseurTrouve(X,Y,1,1),
@@ -293,7 +315,7 @@ miseAJourPredicat :-
 		retractall(sureNotAscenseur([X,Y])),
 	        assert(sureAscenseur([X,Y])),
 	        assert(ascenseurTrouve)
-	    );
+	    );%sinon
 	(
 	        not(ascenseur([X,Y])),
 		retractall(maybeAscenseur([X,Y])),
@@ -301,19 +323,22 @@ miseAJourPredicat :-
 	    )
 	),
 	(
+	    % Si il y a un trou
 	    (
 	        not(not(trou([X,Y]))),
 		retractall(maybeTrou([X,Y])),
 		retractall(sureNotTrou([X,Y])),
 	        assert(sureTrou([X,Y]))
-	    );
+	    );%sinon
 	(
 	        not(trou([X,Y])),
 		retractall(maybeTrou([X,Y])),
 	        assert(sureNotTrou([X,Y]))
 	    )
 	),
-	(   (
+	(
+	    % Si il n'y a ni souffle, ni odeur, alors le case autour sont sures
+	    (
 	    not(souffle([X,Y])),
 	    not(odeur([X,Y])),
 	    ((Xa is X,Ya is Y + 1, not(mur([Xa,Ya])),not(visite([Xa,Ya])), assert(safe([Xa,Ya])));!),
@@ -322,6 +347,7 @@ miseAJourPredicat :-
 	    ((Xd is X - 1,Yd is Y, not(mur([Xd,Yd])),not(visite([Xd,Yd])), assert(safe([Xd,Yd])));!)
 	);!),
 	((
+	    % S'il y a une odeur il y a potentiellement un monstre autour sauf si on sait qu'il n'y en a pas
 	    not(not(odeur([X,Y]))),
 	    Xup is X + 1,
 	    Xdown is X - 1,
@@ -361,6 +387,7 @@ miseAJourPredicat :-
 	    );!)
 	);
 	(
+	    %S'il n'y a pas d'odeur on sait qu'il n'y a pas de monstre autour
 	    not(odeur([X,Y])),
 	    Xup is X + 1,
 	    Xdown is X - 1,
@@ -401,6 +428,7 @@ miseAJourPredicat :-
 	    );!)
 	);!),
 	(   (
+	    % S'il y a un souffle Il y a potentiellement un trou sur les cases autour, sauf si on sait qu'il n'y en a pas
 	    not(not(souffle([X,Y]))),
 	    Xup is X + 1,
 	    Xdown is X - 1,
@@ -436,6 +464,7 @@ miseAJourPredicat :-
 	    );!)
 	);
 	(
+	    % Sinon il n'y a pas de trou
 	    not(souffle([X,Y])),
 	    Xup is X + 1,
 	    Xdown is X - 1,
@@ -476,6 +505,7 @@ miseAJourPredicat :-
 	);!),
 
 	(   (
+	    % S'il y a un bruit, il y a potentiellement un ascenseur sur une case autour, sauf si on sait qu'il n'y en a pas
 	    not(not(bruit([X,Y]))),
 	    Xup is X + 1,
 	    Xdown is X - 1,
@@ -557,6 +587,7 @@ miseAJourPredicat :-
 
 
 	(   (
+	    % S'il y a un bling, on sait qu'il y a un trésor autour sauf sur les cases où on sait qu'il n'y en a pas
 	    not(not(bling([X,Y]))),
 	    Xup is X + 1,
 	    Xdown is X - 1,
@@ -596,6 +627,7 @@ miseAJourPredicat :-
 	    );!)
 	);
 	(
+	    % S'il n'y en a pas, on sait qu'il y a pas de trésor autour
 	    not(bling([X,Y])),
 	    Xup is X + 1,
 	    Xdown is X - 1,
@@ -641,10 +673,19 @@ miseAJourPredicat :-
 	miseAJourPredicatsMonde,
 	!.
 
+% Mise à jour des prédicats de chaque case de la map
 miseAJourPredicatsMonde :-
 	miseAJourPredicatsCase(0,0),
 	!.
 
+% Fonction récursive de mise à jour de prédicats pour une case
+% Pour chaque case visitée, on vérifie l'indice dessus, et si nous avons
+% une certitude sur l'emplacement de l'élément, on en déduit qu'il n'est
+% pas sur les autres, et sui il n'y a que des certitudes de ne pas avoir
+% l'élément autour sauf sur une case, on en déduit que l'élément est sur
+% cette case
+% Et en fonction nous avons des nouveaux voisins, où l'on est sur qu'il
+% n'y a ni trou, ni monstre, on dit qu'elle est safe
 miseAJourPredicatsCase(Xa,Ya) :-
 	(
 	     (
@@ -751,6 +792,8 @@ miseAJourPredicatsCase(Xa,Ya) :-
 	),
 	!.
 
+% Fonction Pour récupérer le nombre de case autour d'une qui ont la
+% certitude qu'il n'y a pas de monstre
 getNumNotMonstreAutourCase(X,Y,N) :-
 	Xup is X + 1,
 	Xdown is X -1,
@@ -764,6 +807,8 @@ getNumNotMonstreAutourCase(X,Y,N) :-
 	N is Niiii,
 	!.
 
+% Fonction Pour récupérer le nombre de case autour d'une qui ont la
+% certitude qu'il n'y a pas d'ascenseur
 getNumNotAscenseurAutourCase(X,Y,N) :-
 	Xup is X + 1,
 	Xdown is X -1,
@@ -777,6 +822,8 @@ getNumNotAscenseurAutourCase(X,Y,N) :-
 	N is Niiii,
 	!.
 
+% Fonction Pour récupérer le nombre de case autour d'une qui ont la
+% certitude qu'il n'y a pas de trésor
 getNumNotTresorAutourCase(X,Y,N) :-
 	Xup is X + 1,
 	Xdown is X -1,
@@ -790,6 +837,8 @@ getNumNotTresorAutourCase(X,Y,N) :-
 	N is Niiii,
 	!.
 
+% Il n'y a qu'un trésor, donc quand on le trouve en X,Y, on met qu'on
+% est sur qu'il n'y a pas de trésor sur les autres cases
 tresorTrouve(X,Y, Xa, Ya) :-
 	(
 	     (
@@ -823,6 +872,8 @@ tresorTrouve(X,Y, Xa, Ya) :-
 	),
 	!.
 
+% Il n'y a qu'un trésor, donc quand on le trouve en X,Y, on met qu'on
+% est sur qu'il n'y a pas dascenseur sur les autres cases
 ascenseurTrouve(X,Y, Xa, Ya) :-
 	(
 	     (
@@ -856,6 +907,8 @@ ascenseurTrouve(X,Y, Xa, Ya) :-
 	),
 	!.
 
+% Il n'y a qu'un trésor, donc quand on le trouve en X,Y, on met qu'on
+% est sur qu'il n'y a pas de monstre sur les autres cases
 monstreTrouve(X,Y, Xa, Ya) :-
 	(
 	     (
@@ -889,6 +942,8 @@ monstreTrouve(X,Y, Xa, Ya) :-
 	),
 	!.
 
+% Si le monstre est tué, il disparait de la carte, et nous savons par
+% son cri qu'il n'est plus nul part
 monstreTue :-
 	retractall(sureMonstre([_,_])),
 	retractall(maybeMonstre([_,_])),
@@ -898,6 +953,7 @@ monstreTue :-
 	monstreTue(1,1),
 	!.
 
+% On met toutes les cases à "sure pas de monstre"
 monstreTue(Xa,Ya) :-
 	(
              (
@@ -922,6 +978,12 @@ monstreTue(Xa,Ya) :-
 /**************BOUCLE DE JEU****************/
 /*******************************************/
 
+% La boucle de jeu
+% Bouge le joueur
+% Vérifie si gagné ou perdu ou rien
+% Affiche le jeu
+% Recommence
+% (Relance le jeu si le jeu est terminé)
 boucleDeJeu(P) :-
 	(
             etapeSuivante(P),
@@ -938,6 +1000,7 @@ boucleDeJeu(P) :-
 	),
 	!.
 
+% Vérifie Gagné ou perdu
 verifierEtatJeu :-
 	    getJoueur(X,Y,1,1),
 	    ((not(not(ascenseur([X,Y]))),not(not(tresorTrouve)),assert(gagner));!),
@@ -950,28 +1013,39 @@ verifierEtatJeu :-
 
 /*******************IA**********************/
 
+% On déduit la prochaine étape,
+% On déplace le joueur
 etapeSuivante(P) :-
 	getProchaineEtape(X,Y,P),
 	bougerJoueur([X,Y]),
 	!.
 
+% X Y sera les coordonnées du prochain déplacement
+% P est le poid de ce déplacement, par importance (0 est le plus
+% important
 getProchaineEtape(X,Y,P) :-
 	(
+	    % Si on a le trésor et l'ascenseur, on va a l'ascenseur
             (
                 not(not(tresorTrouve)),
                 not(not(ascenseurTrouve)),
                 getAscenseur(X,Y,1,1)
 	    );
+            % Initialisation au poid le plus lourd
 	    assert(poidChemin(10)),
+            % Initialisation du chemin a prendre
 	    assert(chemin([1,1])),
+            % Parcours de la caarte
             getProchaineEtapeSafe(X,Y,0,0),
             (
 		(
+		    % Si le poid est 2 ou 3 il faut tirer une fleche
 		    poidChemin(N),
 		    (N == 2; N == 3),
 		    tirerFleche(X,Y,P)
 		);!
 	    ),
+            % Init
             assert(chemin([_,_])),
             retractall(poidChemin(_))
         ),
@@ -987,6 +1061,7 @@ getProchaineEtapeSafe(X,Y,Xa,Ya) :-
              (
 		   (
 		         Ya > 5,
+			 % Fin du parcours, le chemin est choisi
 		         chemin([Xch,Ych]),
 		         X is Xch,
 			 Y is Ych
@@ -999,21 +1074,25 @@ getProchaineEtapeSafe(X,Y,Xa,Ya) :-
 		                  not(sureTrou([Xb,Yb])),
 		                  (
 				      (
+				          % Si la case est sûre, importance max car 0 risque
 				          safe([Xb,Yb]),
 				          Va is 0
 				      );
 				      (
+					  % Sinon, si nous savons où est les monstre, on lui tire dessus
 					  not(safe([Xb,Yb])),
 					  sureMonstre([Xb,Yb]),fleche,
 				          Va is 2
 				      );
 				      (
+					  % Sinon on essaie de tirer dessus
 					  not(safe([Xb,Yb])),
 					  not(sureMonstre([Xb,Yb])),
 				          maybeMonstre([Xb,Yb]),fleche,
 				          Va is 3
 				      );
 				      (
+					  % Sinon on essaie d'aller sur une case où il peut y avoir un ascenseur ou un tresor
 					  not(safe([Xb,Yb])),
 					  not(sureMonstre([Xb,Yb])),
 					  not(sureTrou([Xb,Yb])),
@@ -1022,6 +1101,7 @@ getProchaineEtapeSafe(X,Y,Xa,Ya) :-
 				          Va is 4
 				      );
 				      (
+					  % Sinon, en dernier recours, on tente au hasard Dernier choix, donc poid max
 					  not(maybeAscenseur([Xb,Yb])),
 					  not(maybeTresor([Xb,Yb])),
 					  not(safe([Xb,Yb])),
@@ -1040,6 +1120,7 @@ getProchaineEtapeSafe(X,Y,Xa,Ya) :-
 				      )
 			          ),
 		                  (
+				      % Si le poid est plus petit, le chemin est meilleur donc on le choisit
 				      poidChemin(V),
 				      Va < V,
 				      retractall(poidChemin(_)),
@@ -1056,26 +1137,36 @@ getProchaineEtapeSafe(X,Y,Xa,Ya) :-
 	),
 	!.
 
+% Tirer Une fleche sur là où est censé etre le monstre Xm, Ym
 tirerFleche(Xm,Ym, P):-
+	% Trouver une case visitée avec odeur
         getOdeurVisite(Xo,Yo),
+	% On bouge le joueur là
 	bougerJoueur([Xo,Yo]),
+	% Le monstre doit être a cote, on se tourne vers lui
 	(
 	    (Xo == Xm, Ym > Yo, tournerJoueur(1));
 	    (Xo < Xm, Ym == Yo, tournerJoueur(2));
 	    (Xo == Xm, Ym > Yo, tournerJoueur(3));
 	    (Xo > Xm, Ym == Yo, tournerJoueur(4))
 	),
+	% On tire dans la direction du joueur
 	tirerFleche,
+	% Mise a jour + affichage
 	miseAJourPredicat,
 	afficherJeu(P),
 	sleep(1),
+	% plus besoin d'afficher que le joueur tire
 	retractall(flecheTire),
 	!.
 
 tirerFleche :-
+	% Le joueur Tire
 	assert(flecheTire),
+	% On prend le joueur + direction
 	getJoueur(X,Y,0,0),
 	getDirection(D,1),
+	% On vérifie si le tir touche ou non
 	(
 	    (
 	        D == 1,
@@ -1128,6 +1219,7 @@ tirerFleche :-
 	),
 	!.
 
+% On fait une ligne de sur pas de monstre dans le sens tiré
 flecheTire(X,Y,D) :-
 	(
 	    (
@@ -1163,6 +1255,7 @@ flecheTire(X,Y,D) :-
 	)),
 	!.
 
+% Trouver une case avec odeur, déjà visité
 getOdeurVisite(Xo,Yo) :-
 	getOdeurVisite(Xo,Yo,1,1),
 	!.
@@ -1189,17 +1282,20 @@ getOdeurVisite(Xo,Yo,Xa,Ya) :-
 
 /*****************DIVERS********************/
 
+% Changer la direction
 tournerJoueur(X) :-
 	retractall(direction(_)),
 	assert(direction(X)),
 	!.
 
+% Déplacer le joueur dans la direction donnée
 bougerJoueur([X,Y]) :-
 	retractall(joueur([_,_])),
 	assert(joueur([X,Y])),
 	miseAJourPredicat,
 	!.
 
+% Avancer le joueur dans la direction donnée
 avancerJoueur :-
 	getJoueur(X,Y,1,1),
 	getDirection(D,1),
@@ -1215,6 +1311,7 @@ avancerJoueur :-
 	),
 	!.
 
+% Avoir la direction
 getDirection(D,X) :-
 	X > 4;
 	(
@@ -1228,6 +1325,7 @@ getDirection(D,X) :-
 	),
 	!.
 
+% Avoir le joueur
 getJoueur(X,Y,Xa,Ya) :-
 	(
            (
@@ -1256,6 +1354,7 @@ getJoueur(X,Y,Xa,Ya) :-
 	),
 	!.
 
+% Avoir l'ascenseur
 getAscenseur(X,Y,Xa,Ya) :-
 	(
            (
@@ -1289,6 +1388,7 @@ getAscenseur(X,Y,Xa,Ya) :-
 /*****************DIVERS********************/
 /*******************************************/
 
+% Savoir si la case est vide
 estVide([X,Y]) :-
 	not(monstre([X,Y])),
 	not(mur([X,Y])),
@@ -1302,6 +1402,7 @@ estVide([X,Y]) :-
 /****************AFFICHAGE******************/
 /*******************************************/
 
+% Afficher la grille
 afficherJeu(P) :-
 	send(P, display, new(T, tabular)),
         send(T, border, 1),
@@ -1338,6 +1439,7 @@ afficherJeu(P) :-
 	send(P, open),
 	send(P,flush).
 
+% Fonction récursive qui affiche une case
 afficherElements(T,X,Y) :-
 	(
                 (

@@ -16,6 +16,16 @@ Puis lancez swi-prolog avec le fichier Wampus.pl.
 Puis exécutez la commande 
 
     start.
+    
+# Le Jeu 
+
+La carte est composée de :
+
+ - Un joueur, placé en bas à gauche
+ - Un monstre placé aléatoirement
+ - Un trésor placé aléatoirement
+ - Un ascenseur placé aléatoirement
+ - Trois trous placés aléatoirement, sauf dans les quatres cases placées en bas à gauche
 
 # L'interface
 

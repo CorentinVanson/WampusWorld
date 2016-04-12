@@ -11,7 +11,7 @@
        tresor/1,
        ascenseur/1,
        trou/1,
-       souffle/2,
+       souffle/2, % Changement ici, le deuxième parametre désigne le nombre de puits autour
        odeur/1,
        bruit/1,
        bling/1,
